@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   GitBranch, Rocket, CheckCircle, XCircle, AlertTriangle,
   FileCode, SkipForward, RefreshCw, ExternalLink, Info, Clock, X, Globe,
-  PlusSquare, Tag, Layout, Plus,
+  PlusSquare, Tag, Layout, Plus, ShieldAlert,
 } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
 import { getAutoDeployMsRemaining, cancelAutoDeploy } from '../../hooks/useSiteContent';
@@ -30,12 +30,19 @@ interface JsxError {
   autoFixed: boolean;
 }
 
+interface BlockedFile {
+  file: string;
+  reason: string;
+  unfixedErrors: JsxError[];
+}
+
 interface AddEditableResult {
   scannedFiles: number;
   modifiedFiles: string[];
   addedKeys: Array<{ key: string; fallback: string; file: string }>;
   skippedFiles: string[];
   jsxErrors: JsxError[];
+  blockedFiles: BlockedFile[];
   commitSha: string | null;
   commitUrl: string | null;
   errors: string[];
@@ -74,7 +81,7 @@ const ROUTES: Array<{ url: string; label: string; group: string }> = [
   { url: '/email-confirmed', label: 'Email bekræftet',      group: 'Konto' },
   // Admin
   { url: '/admin',           label: 'Admin',                group: 'Admin' },
-  // Layout — global components (not tied to any single page)
+  // Layout
   { url: '__navbar__',       label: 'NavBar',               group: 'Layout' },
   { url: '__footer__',       label: 'Footer',               group: 'Layout' },
 ];
@@ -148,7 +155,6 @@ const UrlPickerModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      {/* Fixed height using min() so it's tall but never overflows the viewport */}
       <div
         className="bg-neutral-800 border border-neutral-600 rounded-xl w-full max-w-md flex flex-col shadow-2xl"
         style={{ height: 'min(95vh, 740px)' }}
@@ -185,7 +191,7 @@ const UrlPickerModal: React.FC<{
           <span className="ml-auto text-xs text-neutral-400 self-center">{selected.size} valgt</span>
         </div>
 
-        {/* Route list — flex-1 + min-h-0 is the key: forces overflow to activate */}
+        {/* Route list */}
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4 min-h-0">
           {groups.map(group => (
             <div key={group}>
@@ -273,17 +279,41 @@ const UrlPickerModal: React.FC<{
 const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => {
   const [open, setOpen] = useState<Record<string, boolean>>({ keys: true });
   const toggle = (k: string) => setOpen(p => ({ ...p, [k]: !p[k] }));
-  const hasErr = result.errors.length > 0;
+
+  const hasBlocked  = (result.blockedFiles ?? []).length > 0;
+  const hasCommit   = result.addedKeys.length > 0;
+  const hasErr      = result.errors.length > 0;
+
+  // Header tone: blocked-only = amber, committed = green, pure-error = red
+  const headerStyle = hasBlocked && !hasCommit
+    ? 'bg-amber-900/30 border-amber-700/40'
+    : hasErr && !hasCommit
+      ? 'bg-red-900/30 border-red-700/40'
+      : 'bg-green-900/20 border-green-700/30';
+
+  const HeaderIcon = hasBlocked && !hasCommit
+    ? <ShieldAlert size={20} className="text-amber-400" />
+    : hasErr && !hasCommit
+      ? <XCircle size={20} className="text-red-400" />
+      : <CheckCircle size={20} className="text-green-400" />;
+
   return (
     <div className="border border-neutral-600 rounded-xl overflow-hidden">
-      <div className={`px-5 py-4 flex items-center gap-3 border-b ${hasErr && !result.addedKeys.length ? 'bg-red-900/30 border-red-700/40' : 'bg-green-900/20 border-green-700/30'}`}>
-        {hasErr && !result.addedKeys.length ? <XCircle size={20} className="text-red-400" /> : <CheckCircle size={20} className="text-green-400" />}
+      <div className={`px-5 py-4 flex items-center gap-3 border-b ${headerStyle}`}>
+        {HeaderIcon}
         <div className="flex-1">
           <p className="font-semibold text-white">
-            {result.addedKeys.length > 0
+            {hasCommit
               ? `${result.addedKeys.length} tekst-node${result.addedKeys.length !== 1 ? 'r' : ''} gjort redigerbar${result.addedKeys.length !== 1 ? 'e' : ''} i ${result.modifiedFiles.length} fil${result.modifiedFiles.length !== 1 ? 'er' : ''}`
-              : 'Ingen hardkodet tekst fundet — alt er allerede redigerbart'}
+              : hasBlocked
+                ? `Ingen filer committed — ${result.blockedFiles.length} fil${result.blockedFiles.length !== 1 ? 'er' : ''} blokeret pga. JSX-fejl`
+                : 'Ingen hardkodet tekst fundet — alt er allerede redigerbart'}
           </p>
+          {hasBlocked && hasCommit && (
+            <p className="text-xs text-amber-400 mt-0.5">
+              {result.blockedFiles.length} fil{result.blockedFiles.length !== 1 ? 'er' : ''} kunne ikke committes — kræver manuel ret
+            </p>
+          )}
           {result.commitSha && (
             <a href={result.commitUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline mt-0.5">
               <ExternalLink size={11} /> Commit: {result.commitSha.slice(0, 7)}
@@ -291,23 +321,31 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
           )}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3 p-5">
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-3 p-5">
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Globe size={15} className="text-neutral-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-neutral-300">{result.scannedFiles}</p>
-          <p className="text-xs text-neutral-500">Filer scannet</p>
+          <p className="text-xs text-neutral-500">Scannet</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <FileCode size={15} className="text-blue-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-blue-400">{result.modifiedFiles.length}</p>
-          <p className="text-xs text-neutral-500">Filer ændret</p>
+          <p className="text-xs text-neutral-500">Ændret</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Tag size={15} className="text-green-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-green-400">{result.addedKeys.length}</p>
-          <p className="text-xs text-neutral-500">Nøgler tilføjet</p>
+          <p className="text-xs text-neutral-500">Nøgler</p>
+        </div>
+        <div className="bg-neutral-800 rounded-lg p-3 text-center">
+          <ShieldAlert size={15} className={hasBlocked ? 'text-amber-400 mx-auto mb-1' : 'text-neutral-600 mx-auto mb-1'} />
+          <p className={`text-xl font-bold ${hasBlocked ? 'text-amber-400' : 'text-neutral-600'}`}>{(result.blockedFiles ?? []).length}</p>
+          <p className="text-xs text-neutral-500">Blokeret</p>
         </div>
       </div>
+
       <div className="px-5 pb-5 space-y-3">
         {result.addedKeys.length > 0 && (
           <Collapsible title={`Tilføjede nøgler (${result.addedKeys.length})`} color="green" open={!!open['keys']} onToggle={() => toggle('keys')}>
@@ -322,32 +360,63 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
             </div>
           </Collapsible>
         )}
+
         {result.modifiedFiles.length > 0 && (
           <Collapsible title={`Ændrede filer (${result.modifiedFiles.length})`} color="blue" open={!!open['files']} onToggle={() => toggle('files')}>
             <TagList items={result.modifiedFiles} color="blue" mono />
           </Collapsible>
         )}
-        {result.jsxErrors && result.jsxErrors.length > 0 && (
+
+        {/* Blocked files — most important, always open */}
+        {(result.blockedFiles ?? []).length > 0 && (
           <Collapsible
-            title={`JSX-fejl fundet: ${result.jsxErrors.length} (${result.jsxErrors.filter(e => e.autoFixed).length} auto-rettet)`}
-            color="yellow"
+            title={`Blokerede filer — kræver manuel ret (${result.blockedFiles.length})`}
+            color="amber"
             open
-            onToggle={() => toggle('jsxErrors')}
+            onToggle={() => toggle('blocked')}
+          >
+            <div className="space-y-3">
+              <p className="text-xs text-amber-400/80">
+                Disse filer indeholder JSX-fejl der ikke kunne auto-rettes (fx <code className="bg-neutral-800 px-1 rounded">&lt;EditableContent&gt;</code> inde i{' '}
+                <code className="bg-neutral-800 px-1 rounded">&lt;code&gt;</code> eller ved siden af et <code className="bg-neutral-800 px-1 rounded">{'{'}</code>-udtryk).{' '}
+                Resten af filerne er committed normalt. Ret disse manuelt og kør scanningen igen.
+              </p>
+              {result.blockedFiles.map((bf, i) => (
+                <div key={i} className="bg-neutral-900/60 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert size={13} className="text-amber-400 shrink-0" />
+                    <span className="text-xs font-mono font-medium text-amber-300 truncate">{bf.file}</span>
+                  </div>
+                  <p className="text-xs text-neutral-400 pl-5">{bf.reason}</p>
+                  {bf.unfixedErrors.map((e, j) => (
+                    <div key={j} className="pl-5 space-y-0.5">
+                      <p className="text-xs text-red-300 font-medium">Linje {e.line}</p>
+                      <p className="text-xs text-yellow-200/70 font-mono break-all">{e.issue}</p>
+                      <p className="text-xs text-neutral-500 font-mono truncate">"{e.text}"</p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </Collapsible>
+        )}
+
+        {result.jsxErrors && result.jsxErrors.filter(e => e.autoFixed).length > 0 && (
+          <Collapsible
+            title={`Auto-rettede JSX-fejl (${result.jsxErrors.filter(e => e.autoFixed).length})`}
+            color="yellow"
+            open={!!open['jsxFixed']}
+            onToggle={() => toggle('jsxFixed')}
           >
             <div className="space-y-2">
               <p className="text-xs text-yellow-400/80 mb-2">
-                Disse tekst-noder var ugyldige JSX-placeringer (fx inde i &lt;option&gt; eller &lt;code&gt;).
-                Auto-rettede noder er rullet tilbage til original tekst.
+                Disse tekst-noder var i ugyldige JSX-placeringer og er automatisk rullet tilbage til original tekst.
               </p>
-              {result.jsxErrors.map((e, i) => (
+              {result.jsxErrors.filter(e => e.autoFixed).map((e, i) => (
                 <div key={i} className="bg-neutral-900/60 rounded p-2 space-y-0.5">
                   <div className="flex items-center gap-2">
-                    {e.autoFixed
-                      ? <CheckCircle size={12} className="text-green-400 shrink-0" />
-                      : <AlertTriangle size={12} className="text-red-400 shrink-0" />}
-                    <span className={`text-xs font-medium ${e.autoFixed ? 'text-green-300' : 'text-red-300'}`}>
-                      {e.autoFixed ? 'Auto-rettet' : 'Kræver manuel ret'} — linje {e.line}
-                    </span>
+                    <CheckCircle size={12} className="text-green-400 shrink-0" />
+                    <span className="text-xs font-medium text-green-300">Auto-rettet — linje {e.line}</span>
                     <span className="text-xs text-neutral-500 font-mono ml-auto truncate max-w-[140px]">{e.file.split('/').pop()}</span>
                   </div>
                   <p className="text-xs text-yellow-200/70 font-mono break-all pl-4">{e.issue}</p>
@@ -357,8 +426,9 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
             </div>
           </Collapsible>
         )}
+
         {result.errors.length > 0 && (
-          <Collapsible title={`Fejl (${result.errors.length})`} color="red" open onToggle={() => toggle('errors')}>
+          <Collapsible title={`Log (${result.errors.length})`} color="red" open={!!open['errors']} onToggle={() => toggle('errors')}>
             <ul className="space-y-1">{result.errors.map((e, i) => (
               <li key={i} className="flex gap-2 text-xs text-red-300"><AlertTriangle size={13} className="shrink-0 mt-0.5" /><span className="font-mono break-all">{e}</span></li>
             ))}</ul>
@@ -374,6 +444,7 @@ const colorMap = {
   green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: 'text-green-400',  badge: 'bg-green-900/40 text-green-300'  },
   blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: 'text-blue-400',   badge: 'bg-blue-900/40 text-blue-300'    },
   yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: 'text-yellow-400', badge: 'bg-yellow-900/40 text-yellow-300' },
+  amber:  { bg: 'bg-amber-900/20',  border: 'border-amber-700/40',  text: 'text-amber-400',  badge: 'bg-amber-900/40 text-amber-300'  },
   red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: 'text-red-400',    badge: 'bg-red-900/40 text-red-300'      },
 };
 
@@ -475,17 +546,27 @@ const DeployContentManager: React.FC = () => {
       });
       const data: AddEditableResult = await res.json();
       setAddResult(data);
-      if (data.errors.length > 0 && data.addedKeys.length === 0) {
+
+      const hasBlocked = (data.blockedFiles ?? []).length > 0;
+      const hasCommit  = data.addedKeys.length > 0;
+
+      if (data.errors.length > 0 && !hasCommit && !hasBlocked) {
         setAddStatus('error'); toast.error('Tilføjelse fejlede');
       } else {
         setAddStatus('success');
-        toast.success(data.addedKeys.length > 0
-          ? `${data.addedKeys.length} tekst-node(r) gjort redigerbare, committed til GitHub`
-          : 'Ingen hardkodet tekst fundet');
+        if (hasCommit && hasBlocked) {
+          toast(`${data.addedKeys.length} nøgle(r) committed · ${data.blockedFiles.length} fil(er) blokeret`, { icon: '⚠️' });
+        } else if (hasCommit) {
+          toast.success(`${data.addedKeys.length} tekst-node(r) gjort redigerbare, committed til GitHub`);
+        } else if (hasBlocked) {
+          toast(`${data.blockedFiles.length} fil(er) blokeret — kræver manuel ret`, { icon: '🚫' });
+        } else {
+          toast.success('Ingen hardkodet tekst fundet');
+        }
       }
     } catch (err: any) {
       setAddStatus('error');
-      setAddResult({ scannedFiles: 0, modifiedFiles: [], addedKeys: [], skippedFiles: [], jsxErrors: [], commitSha: null, commitUrl: null, errors: [err.message] });
+      setAddResult({ scannedFiles: 0, modifiedFiles: [], addedKeys: [], skippedFiles: [], jsxErrors: [], blockedFiles: [], commitSha: null, commitUrl: null, errors: [err.message] });
       toast.error('Tilføjelse fejlede');
     }
   };
@@ -571,9 +652,9 @@ const DeployContentManager: React.FC = () => {
         <p className="text-xs text-neutral-400">
           <span className="text-neutral-200 font-medium">Gør tekst redigerbar</span> — Vælg sider via URL, og backend'en scanner siden og alle importerede komponenter rekursivt.
           Konverterer bare JSX-tekst, <code className="bg-neutral-900 px-1 rounded text-neutral-300">{"streng"}</code>-udtryk,{' '}
-          <code className="bg-neutral-900 px-1 rounded text-neutral-300">getContent()</code> kald og objekt-labels (faner m.m.) til{' '}
+          <code className="bg-neutral-900 px-1 rounded text-neutral-300">getContent()</code> kald og objekt-labels til{' '}
           <code className="bg-neutral-900 px-1 rounded text-neutral-300">&lt;EditableContent /&gt;</code>.
-          Vælg <span className="text-neutral-200 font-medium">Layout</span> gruppen for NavBar/Footer — de er separate fra sider og inkluderes kun når valgt. Dynamiske udtryk og eksisterende EditableContent berøres ikke.
+          Filer med ikke-auto-rettelige JSX-fejl committes <em>ikke</em> — resten fortsætter normalt.
         </p>
       </div>
 
