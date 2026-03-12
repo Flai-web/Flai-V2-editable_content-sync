@@ -112,7 +112,7 @@ const AdminPage: React.FC = () => {
       <div className="pt-24 pb-16 min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-neutral-400">
           <div className="w-10 h-10 border-4 border-neutral-600 border-t-primary rounded-full animate-spin" />
-          <span className="text-sm"><EditableContent contentKey="admin-page-checker-adgang" fallback="Checker adgang…" /></span>
+          <span className="text-sm">Checker adgang…</span>
         </div>
       </div>
     );
