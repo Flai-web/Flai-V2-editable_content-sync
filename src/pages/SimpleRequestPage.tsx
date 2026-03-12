@@ -52,6 +52,13 @@ const SimpleRequestPage: React.FC = () => {
   const [addressDistance, setAddressDistance] = useState<string>('');
   const [isValidatingAddress, setIsValidatingAddress] = useState(false);
 
+  // Mount guard — prevents black screen flash on direct URL navigation
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Restore state after Google OAuth
   useEffect(() => {
     const restoreState = () => {
@@ -373,7 +380,8 @@ const SimpleRequestPage: React.FC = () => {
     if (!response.ok) console.error('Failed to update booking with payment intent');
   };
 
-  if (!isProductsLoaded || !isSiteContentLoaded) {
+  // Show spinner until mounted AND data is ready
+  if (!isMounted || !isProductsLoaded || !isSiteContentLoaded) {
     return (
       <div className="pt-24 pb-16 container">
         <div className="text-center py-12">
