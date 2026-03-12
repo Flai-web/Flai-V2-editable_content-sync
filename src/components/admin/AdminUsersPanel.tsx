@@ -63,19 +63,19 @@ const DetailsCard: React.FC<{ user: UserProfile; onClose: () => void }> = ({ use
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-2">
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Credits</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-credits" fallback="Credits" /></p>
           <p className="font-bold text-primary">{user.credits}</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Bookinger</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-bookinger" fallback="Bookinger" /></p>
           <p className="font-bold">{loading ? '…' : bookings.length}</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Login</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-login" fallback="Login" /></p>
           <p className="font-bold capitalize text-xs">{user.provider || '—'}</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Sidst aktiv</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-sidst-aktiv" fallback="Sidst aktiv" /></p>
           <p className="font-bold text-xs">
             {user.last_sign_in
               ? new Date(user.last_sign_in).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })
@@ -102,7 +102,7 @@ const DetailsCard: React.FC<{ user: UserProfile; onClose: () => void }> = ({ use
                 <p className="text-xs text-neutral-500">{b.booking_date} · {b.booking_time}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs font-semibold">{b.price} kr</span>
+                <span className="text-xs font-semibold">{b.price} <EditableContent contentKey="admin-users-panel-kr" fallback="kr" /></span>
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                   b.is_completed ? 'bg-success/20 text-success'
                   : b.payment_status === 'paid' ? 'bg-primary/20 text-primary'
@@ -281,24 +281,23 @@ const UserRow: React.FC<{
   const PopupBlockedBanner = () => (
     <div className="border-t border-warning/30 bg-warning/10 px-4 py-3 rounded-b-lg">
       <p className="text-xs font-semibold text-warning mb-2 flex items-center gap-1.5">
-        <span>⚠</span> Popup blev blokeret — følg disse trin:
-      </p>
+        <span>⚠</span> <EditableContent contentKey="admin-users-panel-popup-blev-blokeret-foelg-disse" fallback="Popup blev blokeret — følg disse trin:" /></p>
       {isBrave ? (
         <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
-          <li>Klik på <strong>Brave-ikonet (løve)</strong> i adresselinjen øverst til højre</li>
-          <li>Rul ned og slå <strong>"Block popups"</strong> fra for denne side</li>
-          <li>Klik på knappen herunder for at prøve igen</li>
+          <li><EditableContent contentKey="admin-users-panel-klik-paa" fallback="Klik på" /><strong><EditableContent contentKey="admin-users-panel-brave-ikonet-loeve" fallback="Brave-ikonet (løve)" /></strong> <EditableContent contentKey="admin-users-panel-i-adresselinjen-oeverst-til-hoejre" fallback="i adresselinjen øverst til højre" /></li>
+          <li><EditableContent contentKey="admin-users-panel-rul-ned-og-slaa" fallback="Rul ned og slå" /><strong><EditableContent contentKey="admin-users-panel-block-popups" fallback="&quot;Block popups&quot;" /></strong> <EditableContent contentKey="admin-users-panel-fra-for-denne-side" fallback="fra for denne side" /></li>
+          <li><EditableContent contentKey="admin-users-panel-klik-paa-knappen-herunder-for" fallback="Klik på knappen herunder for at prøve igen" /></li>
         </ol>
       ) : isFirefox ? (
         <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
-          <li>Klik på <strong>popup-ikonet</strong> i adresselinjen (til højre)</li>
-          <li>Vælg <strong>"Tillad popups fra denne side"</strong></li>
+          <li>Klik på <strong><EditableContent contentKey="admin-users-panel-popup-ikonet" fallback="popup-ikonet" /></strong> <EditableContent contentKey="admin-users-panel-i-adresselinjen-til-hoejre" fallback="i adresselinjen (til højre)" /></li>
+          <li><EditableContent contentKey="admin-users-panel-vaelg" fallback="Vælg" /><strong><EditableContent contentKey="admin-users-panel-tillad-popups-fra-denne-side" fallback="&quot;Tillad popups fra denne side&quot;" /></strong></li>
           <li>Klik på knappen herunder for at prøve igen</li>
         </ol>
       ) : (
         <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
-          <li>Klik på <strong>popup-blokeret-ikonet</strong> i adresselinjen (til højre)</li>
-          <li>Vælg <strong>"Tillad altid popups fra denne side"</strong></li>
+          <li>Klik på <strong><EditableContent contentKey="admin-users-panel-popup-blokeret-ikonet" fallback="popup-blokeret-ikonet" /></strong> i adresselinjen (til højre)</li>
+          <li>Vælg <strong><EditableContent contentKey="admin-users-panel-tillad-altid-popups-fra-denne" fallback="&quot;Tillad altid popups fra denne side&quot;" /></strong></li>
           <li>Klik på knappen herunder for at prøve igen</li>
         </ol>
       )}
@@ -306,8 +305,7 @@ const UserRow: React.FC<{
         onClick={handleSupportClick}
         className="mt-2.5 flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-warning/20 hover:bg-warning/30 text-warning transition-colors font-medium"
       >
-        <ExternalLink size={12} /> Prøv igen
-      </button>
+        <ExternalLink size={12} /> <EditableContent contentKey="admin-users-panel-proev-igen" fallback="Prøv igen" /></button>
     </div>
   );
 
@@ -327,7 +325,7 @@ const UserRow: React.FC<{
         {/* Info */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate leading-tight">
-            {user.display_name || <span className="text-neutral-500">Intet navn</span>}
+            {user.display_name || <span className="text-neutral-500"><EditableContent contentKey="admin-users-panel-intet-navn" fallback="Intet navn" /></span>}
           </p>
           <p className="text-xs text-neutral-400 truncate">{user.email}</p>
         </div>
@@ -342,8 +340,7 @@ const UserRow: React.FC<{
           )}
           {user.is_admin && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex items-center gap-1">
-              <Shield size={10} /> Admin
-            </span>
+              <Shield size={10} /> <EditableContent contentKey="admin-users-panel-admin" fallback="Admin" /></span>
           )}
           <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-700 text-neutral-300 flex items-center gap-1">
             <Coins size={10} /> {user.credits}
@@ -360,16 +357,14 @@ const UserRow: React.FC<{
                 : 'bg-neutral-700 hover:bg-neutral-600 text-neutral-300 hover:text-white'
             }`}
           >
-            <Eye size={12} /> Detaljer
-          </button>
+            <Eye size={12} /> <EditableContent contentKey="admin-users-panel-detaljer" fallback="Detaljer" /></button>
           <button
             onClick={handleSupportClick}
             disabled={supportLoading}
             className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded bg-neutral-700 hover:bg-neutral-600 text-neutral-300 hover:text-white transition-colors disabled:opacity-50"
           >
             {supportLoading ? <Loader size={12} className="animate-spin" /> : <ExternalLink size={12} />}
-            Support
-          </button>
+            <EditableContent contentKey="admin-users-panel-support" fallback="Support" /></button>
           <button
             onClick={() => { setShowEdit(v => !v); setShowDetails(false); }}
             className={`p-1.5 rounded transition-colors ${

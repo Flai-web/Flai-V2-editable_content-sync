@@ -279,15 +279,14 @@ const HomeSectionsManager: React.FC = () => {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <label className="form-label">Project Filer</label>
+          <label className="form-label"><EditableContent contentKey="home-sections-manager-project-filer" fallback="Project Filer" /></label>
           <button
             onClick={() => addCodeFile(isEdit)}
             className="btn-secondary text-sm flex items-center"
             disabled={codeFiles.length >= 5}
           >
             <Plus size={16} className="mr-1" />
-            Tilføj Fil
-          </button>
+            <EditableContent contentKey="home-sections-manager-tilfoej-fil" fallback="Tilføj Fil" /></button>
         </div>
 
         {codeFiles.map((file, index) => (
@@ -349,13 +348,13 @@ const HomeSectionsManager: React.FC = () => {
         {codeFiles.length === 0 && (
           <div className="text-center py-8 text-neutral-400">
             <FileCode size={48} className="mx-auto mb-3 opacity-50" />
-            <p>Ingen filer endnu. Klik "Tilføj Fil" for at starte.</p>
+            <p><EditableContent contentKey="home-sections-manager-ingen-filer-endnu-klik-tilfoej" fallback="Ingen filer endnu. Klik &quot;Tilføj Fil&quot; for at starte." /></p>
           </div>
         )}
 
         <div className="text-sm text-neutral-400">
-          <p>• Maksimum 1 HTML fil (index.html påkrævet)</p>
-          <p>• Maksimum 4 andre filer (JS, TS, TSX, eller Python)</p>
+          <p><EditableContent contentKey="home-sections-manager-maksimum-1-html-fil-index" fallback="• Maksimum 1 HTML fil (index.html påkrævet)" /></p>
+          <p><EditableContent contentKey="home-sections-manager-maksimum-4-andre-filer-js" fallback="• Maksimum 4 andre filer (JS, TS, TSX, eller Python)" /></p>
         </div>
       </div>
     );
@@ -376,7 +375,7 @@ const HomeSectionsManager: React.FC = () => {
     return (
       <div className="space-y-4">
         <div>
-          <label className="form-label">Sektion Type</label>
+          <label className="form-label"><EditableContent contentKey="home-sections-manager-sektion-type" fallback="Sektion Type" /></label>
           <select
             value={section.section_type}
             onChange={(e) => updateSection({ section_type: e.target.value as 'standard' | 'code' })}
@@ -390,7 +389,7 @@ const HomeSectionsManager: React.FC = () => {
         {section.section_type === 'standard' ? (
           <>
             <div>
-              <label className="form-label">Titel</label>
+              <label className="form-label"><EditableContent contentKey="home-sections-manager-titel" fallback="Titel" /></label>
               <input
                 type="text"
                 value={section.title}
@@ -401,7 +400,7 @@ const HomeSectionsManager: React.FC = () => {
             </div>
             
             <div>
-              <label className="form-label">Beskrivelse</label>
+              <label className="form-label"><EditableContent contentKey="home-sections-manager-beskrivelse" fallback="Beskrivelse" /></label>
               <textarea
                 value={section.description}
                 onChange={(e) => updateSection({ description: e.target.value })}
@@ -412,7 +411,7 @@ const HomeSectionsManager: React.FC = () => {
             </div>
 
             <div>
-              <label className="form-label">Billede</label>
+              <label className="form-label"><EditableContent contentKey="home-sections-manager-billede" fallback="Billede" /></label>
               <ImageUpload
                 onImageUploaded={(url) => handleImageUpload(url, isEdit)}
                 bucket="home-sections"
@@ -441,8 +440,7 @@ const HomeSectionsManager: React.FC = () => {
             className="mr-2"
           />
           <label htmlFor={`${isEdit ? 'edit' : 'new'}-active`} className="text-neutral-300">
-            Aktiv
-          </label>
+            <EditableContent contentKey="home-sections-manager-aktiv" fallback="Aktiv" /></label>
         </div>
       </div>
     );
@@ -452,7 +450,7 @@ const HomeSectionsManager: React.FC = () => {
     return (
       <div className="text-center py-8">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="mt-2">Indlæser sektioner...</p>
+        <p className="mt-2"><EditableContent contentKey="home-sections-manager-indlaeser-sektioner" fallback="Indlæser sektioner..." /></p>
       </div>
     );
   }
@@ -460,19 +458,18 @@ const HomeSectionsManager: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Forside Sektioner</h2>
+        <h2 className="text-2xl font-bold"><EditableContent contentKey="home-sections-manager-forside-sektioner" fallback="Forside Sektioner" /></h2>
         <button
           onClick={() => setShowAddForm(true)}
           className="btn-primary flex items-center"
         >
           <Plus size={20} className="mr-2" />
-          Tilføj Sektion
-        </button>
+          <EditableContent contentKey="home-sections-manager-tilfoej-sektion" fallback="Tilføj Sektion" /></button>
       </div>
 
       {showAddForm && (
         <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
-          <h3 className="text-xl font-semibold mb-4">Tilføj Ny Sektion</h3>
+          <h3 className="text-xl font-semibold mb-4"><EditableContent contentKey="home-sections-manager-tilfoej-ny-sektion" fallback="Tilføj Ny Sektion" /></h3>
           {renderSectionForm(newSection)}
           <div className="flex justify-end space-x-3 mt-4">
             <button
@@ -489,8 +486,7 @@ const HomeSectionsManager: React.FC = () => {
               }}
               className="btn-secondary"
             >
-              Annuller
-            </button>
+              <EditableContent contentKey="home-sections-manager-annuller" fallback="Annuller" /></button>
             <button onClick={handleAddSection} className="btn-primary">
               Tilføj Sektion
             </button>
@@ -517,8 +513,7 @@ const HomeSectionsManager: React.FC = () => {
                     className="btn-primary flex items-center"
                   >
                     <Save size={16} className="mr-2" />
-                    Gem
-                  </button>
+                    <EditableContent contentKey="home-sections-manager-gem" fallback="Gem" /></button>
                 </div>
               </div>
             ) : (
@@ -550,11 +545,10 @@ const HomeSectionsManager: React.FC = () => {
                         </span>
                         {section.section_type === 'code' && (
                           <span className="text-sm text-neutral-400">
-                            {section.code_files?.length || 0} filer
-                          </span>
+                            {section.code_files?.length || 0} <EditableContent contentKey="home-sections-manager-filer" fallback="filer" /></span>
                         )}
                         <span className="text-sm text-neutral-400">
-                          Rækkefølge: {section.order_index + 1}
+                          <EditableContent contentKey="home-sections-manager-raekkefoelge" fallback="Rækkefølge:" />{section.order_index + 1}
                         </span>
                       </div>
                     </div>
@@ -596,8 +590,7 @@ const HomeSectionsManager: React.FC = () => {
         
         {sections.length === 0 && (
           <p className="text-center py-12 text-neutral-400">
-            Ingen sektioner fundet. Tilføj den første sektion for at komme i gang.
-          </p>
+            <EditableContent contentKey="home-sections-manager-ingen-sektioner-fundet-tilfoej-den" fallback="Ingen sektioner fundet. Tilføj den første sektion for at komme i gang." /></p>
         )}
       </div>
     </div>

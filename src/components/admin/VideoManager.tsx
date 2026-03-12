@@ -253,12 +253,10 @@ const EagerBadge: React.FC<{ publicId: string }> = ({ publicId }) => {
 
   return ready ? (
     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-      <Zap size={9} /> Optimeret
-    </span>
+      <Zap size={9} /> <EditableContent contentKey="video-manager-optimeret" fallback="Optimeret" /></span>
   ) : (
     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 animate-pulse">
-      <Loader2 size={9} className="animate-spin" /> Optimerer…
-    </span>
+      <Loader2 size={9} className="animate-spin" /> <EditableContent contentKey="video-manager-optimerer" fallback="Optimerer…" /></span>
   );
 };
 
@@ -268,14 +266,13 @@ const CompressionInfoPanel: React.FC<{ isHeroVideo?: boolean }> = ({ isHeroVideo
   <div className={`rounded-xl p-3 border text-xs space-y-1.5 ${isHeroVideo ? 'bg-primary/8 border-primary/25' : 'bg-neutral-900/60 border-neutral-700'}`}>
     <p className={`font-semibold flex items-center gap-1.5 ${isHeroVideo ? 'text-primary' : 'text-neutral-300'}`}>
       <Zap size={12} className={isHeroVideo ? 'text-primary' : 'text-amber-400'} />
-      Automatisk Cloudinary optimering ved upload
-    </p>
+      <EditableContent contentKey="video-manager-automatisk-cloudinary-optimering-ved-upload" fallback="Automatisk Cloudinary optimering ved upload" /></p>
     <ul className={`space-y-1 pl-0.5 ${isHeroVideo ? 'text-primary/70' : 'text-neutral-400'}`}>
-      <li>• <strong>HLS adaptiv stream</strong> — serverer rigtig bitrate til brugerens forbindelseshastighed</li>
-      <li>• <strong>MP4 + WebM</strong> forudgenereres straks — ingen ventetid for første besøgende</li>
-      <li>• <strong>q_auto</strong> intelligent komprimering — typisk 60–80 % lavere filstørrelse</li>
-      <li>• <strong>1080p max</strong> — resolutionsloft til web (c_limit)</li>
-      <li>• <strong>Chunked upload</strong> — filer opdeles i 6 MB bidder for pålidelig overførsel</li>
+      <li>• <strong><EditableContent contentKey="video-manager-hls-adaptiv-stream" fallback="HLS adaptiv stream" /></strong> <EditableContent contentKey="video-manager-serverer-rigtig-bitrate-til-brugerens" fallback="— serverer rigtig bitrate til brugerens forbindelseshastighed" /></li>
+      <li>• <strong><EditableContent contentKey="video-manager-mp4-webm" fallback="MP4 + WebM" /></strong> <EditableContent contentKey="video-manager-forudgenereres-straks-ingen-ventetid-for" fallback="forudgenereres straks — ingen ventetid for første besøgende" /></li>
+      <li>• <strong><EditableContent contentKey="video-manager-q-auto" fallback="q_auto" /></strong> <EditableContent contentKey="video-manager-intelligent-komprimering-typisk-60-80" fallback="intelligent komprimering — typisk 60–80 % lavere filstørrelse" /></li>
+      <li>• <strong><EditableContent contentKey="video-manager-1080p-max" fallback="1080p max" /></strong> <EditableContent contentKey="video-manager-resolutionsloft-til-web-c-limit" fallback="— resolutionsloft til web (c_limit)" /></li>
+      <li>• <strong><EditableContent contentKey="video-manager-chunked-upload" fallback="Chunked upload" /></strong> <EditableContent contentKey="video-manager-filer-opdeles-i-6-mb" fallback="— filer opdeles i 6 MB bidder for pålidelig overførsel" /></li>
     </ul>
   </div>
 );
@@ -333,8 +330,7 @@ const AssignModal: React.FC<{ video: CldVideo; onClose: () => void }> = ({ video
 
         <p className="mx-5 mt-2 text-xs text-neutral-500 flex items-center gap-1.5">
           <Zap size={10} className="text-amber-400" />
-          URL inkluderer automatisk komprimering (q_auto · H.264 · HLS sp_hd · 1080p).
-        </p>
+          <EditableContent contentKey="video-manager-url-inkluderer-automatisk-komprimering-q" fallback="URL inkluderer automatisk komprimering (q_auto · H.264 · HLS sp_hd · 1080p)." /></p>
 
         <div className="p-5">
           <EditableContent contentKey="video-assign-key-label" as="label" className="text-sm text-neutral-300 mb-1.5 block" fallback="Indholdsnøgle" />
@@ -522,7 +518,7 @@ const UploadModal: React.FC<{ onClose: () => void; onCreated: (v: CldVideo) => v
               className="w-full bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary placeholder-neutral-500 disabled:opacity-50" />
             {videoTitle.trim() && (
               <p className="text-xs text-neutral-500 mt-1">
-                Cloudinary ID: <span className="font-mono text-primary">{videoTitle.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_')}</span>
+                <EditableContent contentKey="video-manager-cloudinary-id" fallback="Cloudinary ID:" /><span className="font-mono text-primary">{videoTitle.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_')}</span>
               </p>
             )}
           </div>
@@ -555,7 +551,7 @@ const UploadModal: React.FC<{ onClose: () => void; onCreated: (v: CldVideo) => v
           {isDone && newPublicId && (
             <div className="flex items-center gap-2 text-xs text-neutral-400">
               <EagerBadge publicId={newPublicId} />
-              <span>HLS + MP4 + WebM forberedes på Cloudinary</span>
+              <span><EditableContent contentKey="video-manager-hls-mp4-webm-forberedes-paa" fallback="HLS + MP4 + WebM forberedes på Cloudinary" /></span>
             </div>
           )}
 
@@ -680,11 +676,10 @@ const ReplaceVideoModal: React.FC<{
           <div className={`rounded-xl p-3 flex items-start gap-2 border ${hero ? 'bg-primary/10 border-primary/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
             <AlertCircle size={15} className={`shrink-0 mt-0.5 ${hero ? 'text-primary' : 'text-amber-400'}`} />
             <div className="text-xs space-y-1">
-              {hero && <p className="text-primary font-medium">Dette er hero-videoen</p>}
+              {hero && <p className="text-primary font-medium"><EditableContent contentKey="video-manager-dette-er-hero-videoen" fallback="Dette er hero-videoen" /></p>}
               <p className={hero ? 'text-primary/80' : 'text-amber-300'}>
-                Filen uploades til det samme Cloudinary ID{' '}
-                <code className="font-mono bg-black/20 px-1 rounded">{video.public_id}</code> — navn, URL og alle tildelinger forbliver uændrede.
-              </p>
+                <EditableContent contentKey="video-manager-filen-uploades-til-det-samme" fallback="Filen uploades til det samme Cloudinary ID" />{' '}
+                <code className="font-mono bg-black/20 px-1 rounded">{video.public_id}</code> <EditableContent contentKey="video-manager-navn-url-og-alle-tildelinger" fallback="— navn, URL og alle tildelinger forbliver uændrede." /></p>
             </div>
           </div>
 
@@ -821,7 +816,7 @@ const VideoRow: React.FC<{
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-medium text-white text-sm truncate">{title(video)}</p>
               {hero && (
-                <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary shrink-0">hero</span>
+                <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary shrink-0"><EditableContent contentKey="video-manager-hero" fallback="hero" /></span>
               )}
             </div>
           )}
@@ -864,7 +859,7 @@ const VideoRow: React.FC<{
               </button>
               {confirmDelete ? (
                 <div className="flex items-center gap-1">
-                  {hero && <span className="text-xs text-amber-400 font-medium mr-1">Hero!</span>}
+                  {hero && <span className="text-xs text-amber-400 font-medium mr-1"><EditableContent contentKey="video-manager-hero-2" fallback="Hero!" /></span>}
                   <button onClick={handleDelete} disabled={deleting} className="px-2 py-1 bg-error text-white rounded-lg hover:bg-error/80 text-xs font-medium transition-colors">
                     {deleting ? <Loader2 size={12} className="animate-spin" /> : 'Slet permanent'}
                   </button>
@@ -906,23 +901,20 @@ const VideoRow: React.FC<{
             </div>
             <a href={mp4Url} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 bg-neutral-700 text-neutral-300 text-xs rounded-lg hover:bg-neutral-600 transition-colors whitespace-nowrap">
-              <Play size={12} /> MP4
-            </a>
+              <Play size={12} /> <EditableContent contentKey="video-manager-mp4" fallback="MP4" /></a>
             <a href={webmUrl} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 bg-neutral-700 text-neutral-300 text-xs rounded-lg hover:bg-neutral-600 transition-colors whitespace-nowrap">
-              <Play size={12} /> WebM
-            </a>
+              <Play size={12} /> <EditableContent contentKey="video-manager-webm" fallback="WebM" /></a>
           </div>
 
           <p className="text-xs text-neutral-500 flex items-center gap-1.5">
             <Zap size={10} className="text-amber-400" />
-            Alle URL'er anvender <span className="font-mono text-amber-400/80">q_auto</span> · <span className="font-mono text-amber-400/80">sp_hd</span> adaptiv HLS · 1080p loft
-          </p>
+            <EditableContent contentKey="video-manager-alle-url-er-anvender" fallback="Alle URL'er anvender" /><span className="font-mono text-amber-400/80">q_auto</span> · <span className="font-mono text-amber-400/80"><EditableContent contentKey="video-manager-sp-hd" fallback="sp_hd" /></span> <EditableContent contentKey="video-manager-adaptiv-hls-1080p-loft" fallback="adaptiv HLS · 1080p loft" /></p>
 
           <p className="text-xs text-neutral-500">
             <span className="font-mono text-neutral-400">{video.public_id}</span>
             {video.bytes > 0 && <>{' · '}{formatBytes(video.bytes)}</>}
-            {video.duration != null && <>{' · '}{Math.round(video.duration)}s</>}
+            {video.duration != null && <>{' · '}{Math.round(video.duration)}<EditableContent contentKey="video-manager-s" fallback="s" /></>}
             {' · '}{new Date(video.created_at).toLocaleString('da-DK')}
           </p>
         </div>
@@ -985,8 +977,7 @@ const VideoManager: React.FC = () => {
             <EditableContent contentKey="video-manager-count-label" as="span"
               fallback={videos.length !== 1 ? 'videoer i dit bibliotek' : 'video i dit bibliotek'} />
             <span className="inline-flex items-center gap-1 ml-1 text-xs px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
-              <Zap size={9} /> q_auto · sp_hd · HLS
-            </span>
+              <Zap size={9} /> <EditableContent contentKey="video-manager-q-auto-sp-hd-hls" fallback="q_auto · sp_hd · HLS" /></span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -1016,7 +1007,7 @@ const VideoManager: React.FC = () => {
         <div className="flex items-center gap-3 bg-error/10 border border-error/30 rounded-xl p-4 text-error">
           <AlertCircle size={18} />
           <div>
-            <p className="font-medium text-sm">API-fejl</p>
+            <p className="font-medium text-sm"><EditableContent contentKey="video-manager-api-fejl" fallback="API-fejl" /></p>
             <p className="text-xs mt-0.5 opacity-80">{error}</p>
           </div>
           <button onClick={fetchVideos} className="ml-auto text-xs underline opacity-80 hover:opacity-100">

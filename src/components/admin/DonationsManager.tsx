@@ -4,6 +4,7 @@ import { DonationLink } from '../../types/index';
 import { Copy, Trash2, ToggleRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generateSlug, generateUniqueSlug } from '../../utils/slug';
+import EditableContent from '../EditableContent';
 
 const DonationsManager: React.FC = () => {
   const [donationLinks, setDonationLinks] = useState<DonationLink[]>([]);
@@ -136,13 +137,13 @@ const DonationsManager: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Indlæser...</div>;
+    return <div className="text-center py-8"><EditableContent contentKey="donations-manager-indlaeser" fallback="Indlæser..." /></div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Donationslinks</h2>
+        <h2 className="text-2xl font-bold"><EditableContent contentKey="donations-manager-donationslinks" fallback="Donationslinks" /></h2>
         <button
           onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -154,7 +155,7 @@ const DonationsManager: React.FC = () => {
       {showForm && (
         <form onSubmit={handleCreateLink} className="bg-neutral-700/30 rounded-lg p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Titel</label>
+            <label className="block text-sm font-medium mb-2"><EditableContent contentKey="donations-manager-titel" fallback="Titel" /></label>
             <input
               type="text"
               value={title}
@@ -164,7 +165,7 @@ const DonationsManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Beskrivelse</label>
+            <label className="block text-sm font-medium mb-2"><EditableContent contentKey="donations-manager-beskrivelse" fallback="Beskrivelse" /></label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -174,7 +175,7 @@ const DonationsManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Minimumsbeløb (DKK)</label>
+            <label className="block text-sm font-medium mb-2"><EditableContent contentKey="donations-manager-minimumsbeloeb-dkk" fallback="Minimumsbeløb (DKK)" /></label>
             <input
               type="number"
               value={minAmount}
@@ -197,8 +198,7 @@ const DonationsManager: React.FC = () => {
       <div className="grid gap-4">
         {donationLinks.length === 0 ? (
           <div className="text-center py-8 text-neutral-400">
-            Ingen donationslinks endnu. Opret det første link for at komme i gang!
-          </div>
+            <EditableContent contentKey="donations-manager-ingen-donationslinks-endnu-opret-det" fallback="Ingen donationslinks endnu. Opret det første link for at komme i gang!" /></div>
         ) : (
           donationLinks.map((link) => (
             <div key={link.id} className="bg-neutral-700/20 rounded-lg p-4 flex items-center justify-between">
@@ -207,9 +207,9 @@ const DonationsManager: React.FC = () => {
                 {link.description && (
                   <p className="text-sm text-neutral-400 mt-1">{link.description}</p>
                 )}
-                <p className="text-sm text-neutral-500 mt-1">Slug: {link.slug}</p>
+                <p className="text-sm text-neutral-500 mt-1"><EditableContent contentKey="donations-manager-slug" fallback="Slug:" />{link.slug}</p>
                 <p className="text-sm text-neutral-400 mt-1">
-                  {link.donation_count} donationer • {link.total_collected} {link.currency}
+                  {link.donation_count} <EditableContent contentKey="donations-manager-donationer" fallback="donationer •" />{link.total_collected} {link.currency}
                 </p>
               </div>
 

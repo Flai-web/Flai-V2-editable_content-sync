@@ -330,8 +330,7 @@ const PortfolioManager: React.FC = () => {
     images.length > 0 && (
       <div className="space-y-3">
         <h4 className="font-medium text-sm text-neutral-300">
-          {images.length} billede{images.length !== 1 ? 'r' : ''} klar
-        </h4>
+          {images.length} <EditableContent contentKey="portfolio-manager-billede" fallback="billede" />{images.length !== 1 ? 'r' : ''} <EditableContent contentKey="portfolio-manager-klar" fallback="klar" /></h4>
         {images.map((img, index) => (
           <div key={index} className="bg-neutral-800/50 rounded-lg p-3 flex items-center space-x-3">
             <img src={img.image_url} alt="" className="w-16 h-16 object-cover rounded flex-shrink-0" />
@@ -370,14 +369,11 @@ const PortfolioManager: React.FC = () => {
         />
         <div className="flex space-x-3">
           <button onClick={() => setShowBundleForm(true)} className="btn-secondary flex items-center">
-            <Package size={20} className="mr-2" /> Ny Bundle
-          </button>
+            <Package size={20} className="mr-2" /> <EditableContent contentKey="portfolio-manager-ny-bundle" fallback="Ny Bundle" /></button>
           <button onClick={() => setShowGroupForm(true)} className="btn-secondary flex items-center">
-            <Images size={20} className="mr-2" /> Gruppér Billeder
-          </button>
+            <Images size={20} className="mr-2" /> <EditableContent contentKey="portfolio-manager-grupp-r-billeder" fallback="Gruppér Billeder" /></button>
           <button onClick={() => setShowAddForm(true)} className="btn-primary flex items-center">
-            <Plus size={20} className="mr-2" /> Tilføj Billede
-          </button>
+            <Plus size={20} className="mr-2" /> <EditableContent contentKey="portfolio-manager-tilfoej-billede" fallback="Tilføj Billede" /></button>
         </div>
       </div>
 
@@ -404,9 +400,9 @@ const PortfolioManager: React.FC = () => {
       {/* ── Create Bundle Form ─────────────────────────────────────────────── */}
       {showBundleForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4">
-          <h3 className="text-xl font-semibold">Opret Ny Bundle</h3>
+          <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-opret-ny-bundle" fallback="Opret Ny Bundle" /></h3>
           <div>
-            <label className="form-label">Bundle Navn</label>
+            <label className="form-label"><EditableContent contentKey="portfolio-manager-bundle-navn" fallback="Bundle Navn" /></label>
             <input
               type="text"
               value={newBundle.name}
@@ -416,7 +412,7 @@ const PortfolioManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="form-label">Tilføj Billeder</label>
+            <label className="form-label"><EditableContent contentKey="portfolio-manager-tilfoej-billeder" fallback="Tilføj Billeder" /></label>
             <ImageUpload
               onImageUploaded={handleNewBundleImageUploaded}
               bucket="portfolio"
@@ -429,11 +425,9 @@ const PortfolioManager: React.FC = () => {
               onClick={() => { setShowBundleForm(false); setNewBundle({ name: '', images: [] }); }}
               className="btn-secondary"
             >
-              Annuller
-            </button>
+              <EditableContent contentKey="portfolio-manager-annuller" fallback="Annuller" /></button>
             <button onClick={handleCreateBundle} className="btn-primary">
-              Opret Bundle
-            </button>
+              <EditableContent contentKey="portfolio-manager-opret-bundle" fallback="Opret Bundle" /></button>
           </div>
         </div>
       )}
@@ -441,7 +435,7 @@ const PortfolioManager: React.FC = () => {
       {/* ── Group Existing Images Form ─────────────────────────────────────── */}
       {showGroupForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4">
-          <h3 className="text-xl font-semibold">Gruppér Eksisterende Billeder</h3>
+          <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-grupp-r-eksisterende-billeder" fallback="Gruppér Eksisterende Billeder" /></h3>
           <div>
             <label className="form-label">Bundle Navn</label>
             <input
@@ -453,7 +447,7 @@ const PortfolioManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="form-label">Vælg Billeder ({groupBundle.imageIds.length} valgt)</label>
+            <label className="form-label"><EditableContent contentKey="portfolio-manager-vaelg-billeder" fallback="Vælg Billeder (" />{groupBundle.imageIds.length} <EditableContent contentKey="portfolio-manager-valgt" fallback="valgt)" /></label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
               {unbundledImages.map(image => (
                 <div
@@ -473,7 +467,7 @@ const PortfolioManager: React.FC = () => {
               ))}
             </div>
             {unbundledImages.length === 0 && (
-              <p className="text-neutral-400 text-sm mt-2">Ingen ubundlede billeder tilgængelige</p>
+              <p className="text-neutral-400 text-sm mt-2"><EditableContent contentKey="portfolio-manager-ingen-ubundlede-billeder-tilgaengelige" fallback="Ingen ubundlede billeder tilgængelige" /></p>
             )}
           </div>
           <div className="flex justify-end space-x-3">
@@ -494,13 +488,13 @@ const PortfolioManager: React.FC = () => {
       {addToBundleId && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4 border-2 border-primary/30">
           <div>
-            <h3 className="text-xl font-semibold">Tilføj billeder til bundle</h3>
+            <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-tilfoej-billeder-til-bundle" fallback="Tilføj billeder til bundle" /></h3>
             <p className="text-neutral-400 text-sm mt-1">
               {bundles.find(b => b.id === addToBundleId)?.name}
             </p>
           </div>
           <div>
-            <label className="form-label">Upload Billeder</label>
+            <label className="form-label"><EditableContent contentKey="portfolio-manager-upload-billeder" fallback="Upload Billeder" /></label>
             <ImageUpload
               onImageUploaded={handleAddToBundleImageUploaded}
               bucket="portfolio"
@@ -516,8 +510,7 @@ const PortfolioManager: React.FC = () => {
               Annuller
             </button>
             <button onClick={handleAddToBundle} className="btn-primary">
-              Tilføj til Bundle
-            </button>
+              <EditableContent contentKey="portfolio-manager-tilfoej-til-bundle" fallback="Tilføj til Bundle" /></button>
           </div>
         </div>
       )}
@@ -525,9 +518,9 @@ const PortfolioManager: React.FC = () => {
       {/* ── Add Single Image Form ──────────────────────────────────────────── */}
       {showAddForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4">
-          <h3 className="text-xl font-semibold">Tilføj Nyt Portfolio Billede</h3>
+          <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-tilfoej-nyt-portfolio-billede" fallback="Tilføj Nyt Portfolio Billede" /></h3>
           <div>
-            <label className="form-label">Titel</label>
+            <label className="form-label"><EditableContent contentKey="portfolio-manager-titel" fallback="Titel" /></label>
             <input
               type="text"
               value={newImage.title}
@@ -537,7 +530,7 @@ const PortfolioManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="form-label">Billede eller Video</label>
+            <label className="form-label"><EditableContent contentKey="portfolio-manager-billede-eller-video" fallback="Billede eller Video" /></label>
             <ImageUpload
               onImageUploaded={(url) => setNewImage(prev => ({ ...prev, image_url: url }))}
               currentImageUrl={newImage.image_url || null}
@@ -552,8 +545,7 @@ const PortfolioManager: React.FC = () => {
               Annuller
             </button>
             <button onClick={handleAddImage} className="btn-primary">
-              Gem Billede
-            </button>
+              <EditableContent contentKey="portfolio-manager-gem-billede" fallback="Gem Billede" /></button>
           </div>
         </div>
       )}
@@ -562,8 +554,7 @@ const PortfolioManager: React.FC = () => {
       <div className="space-y-4">
         <h3 className="text-xl font-semibold flex items-center">
           <ImageIcon className="mr-2" size={24} />
-          Portfolio Billeder
-        </h3>
+          <EditableContent contentKey="portfolio-manager-portfolio-billeder" fallback="Portfolio Billeder" /></h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {(() => {
@@ -629,7 +620,7 @@ const PortfolioManager: React.FC = () => {
                                 </span>
                               </div>
                               <span className="text-white font-medium flex items-center">
-                                Udvid <ChevronDown size={14} className="ml-1" />
+                                <EditableContent contentKey="portfolio-manager-udvid" fallback="Udvid" /><ChevronDown size={14} className="ml-1" />
                               </span>
                             </div>
                           </div>
@@ -654,7 +645,7 @@ const PortfolioManager: React.FC = () => {
                             <Package size={20} className="text-primary" />
                             <div>
                               <h4 className="font-medium text-lg">{bundle?.name || 'Bundle'}</h4>
-                              <p className="text-sm text-neutral-400">{bundleImages.length} billeder</p>
+                              <p className="text-sm text-neutral-400">{bundleImages.length} <EditableContent contentKey="portfolio-manager-billeder" fallback="billeder" /></p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-3">
@@ -673,14 +664,12 @@ const PortfolioManager: React.FC = () => {
                               }}
                               className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded transition-colors text-sm font-medium flex items-center"
                             >
-                              <Plus size={14} className="mr-1" /> Tilføj billeder
-                            </button>
+                              <Plus size={14} className="mr-1" /> <EditableContent contentKey="portfolio-manager-tilfoej-billeder-2" fallback="Tilføj billeder" /></button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDeleteBundle(image.bundle_id!); }}
                               className="px-3 py-1.5 bg-error/10 text-error hover:bg-error hover:text-white rounded transition-colors text-sm font-medium flex items-center"
                             >
-                              <Trash2 size={14} className="mr-1" /> Slet Bundle
-                            </button>
+                              <Trash2 size={14} className="mr-1" /> <EditableContent contentKey="portfolio-manager-slet-bundle" fallback="Slet Bundle" /></button>
                           </div>
                         </div>
                       </div>
@@ -708,7 +697,7 @@ const PortfolioManager: React.FC = () => {
                                   />
                                 </div>
                                 <div>
-                                  <label className="form-label text-sm">Billede Navn (intern)</label>
+                                  <label className="form-label text-sm"><EditableContent contentKey="portfolio-manager-billede-navn-intern" fallback="Billede Navn (intern)" /></label>
                                   <input
                                     type="text"
                                     value={editingImage.image_name || ''}
@@ -722,8 +711,7 @@ const PortfolioManager: React.FC = () => {
                                     <X size={14} className="mr-1" /> Annuller
                                   </button>
                                   <button onClick={handleUpdateImage} className="btn-primary text-sm py-1 px-3 flex items-center">
-                                    <Save size={14} className="mr-1" /> Gem
-                                  </button>
+                                    <Save size={14} className="mr-1" /> <EditableContent contentKey="portfolio-manager-gem" fallback="Gem" /></button>
                                 </div>
                               </div>
                             ) : (
@@ -777,7 +765,7 @@ const PortfolioManager: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="form-label">Billede</label>
+                        <label className="form-label"><EditableContent contentKey="portfolio-manager-billede-2" fallback="Billede" /></label>
                         <ImageUpload
                           onImageUploaded={(url) => setEditingImage({ ...editingImage, image_url: url })}
                           currentImageUrl={editingImage.image_url}
@@ -830,7 +818,7 @@ const PortfolioManager: React.FC = () => {
       {portfolioImages.length === 0 && (
         <div className="text-center py-12 text-neutral-400">
           <ImageIcon size={48} className="mx-auto mb-4 opacity-50" />
-          <p>Ingen portfolio billeder fundet. Tilføj det første billede for at komme i gang.</p>
+          <p><EditableContent contentKey="portfolio-manager-ingen-portfolio-billeder-fundet-tilfoej" fallback="Ingen portfolio billeder fundet. Tilføj det første billede for at komme i gang." /></p>
         </div>
       )}
     </div>

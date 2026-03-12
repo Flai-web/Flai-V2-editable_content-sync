@@ -622,16 +622,15 @@ const DiscountCodesManager: React.FC = () => {
                       <p className="text-neutral-300 mb-2">{code.description}</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-neutral-400">
                         <div>
-                          <span className="font-medium">Rabat:</span> {code.discount_value}{code.discount_type === 'percentage' ? '%' : ' kr'}
+                          <span className="font-medium"><EditableContent contentKey="discount-codes-manager-rabat" fallback="Rabat:" /></span> {code.discount_value}{code.discount_type === 'percentage' ? '%' : ' kr'}
                         </div>
                         <div>
-                          <span className="font-medium">Min. beløb:</span> {code.min_order_amount} kr
+                          <span className="font-medium"><EditableContent contentKey="discount-codes-manager-min-beloeb" fallback="Min. beløb:" /></span> {code.min_order_amount} <EditableContent contentKey="discount-codes-manager-kr" fallback="kr" /></div>
+                        <div>
+                          <span className="font-medium"><EditableContent contentKey="discount-codes-manager-anvendelser" fallback="Anvendelser:" /></span> {code.current_uses}{code.max_uses ? `/${code.max_uses}` : ''}
                         </div>
                         <div>
-                          <span className="font-medium">Anvendelser:</span> {code.current_uses}{code.max_uses ? `/${code.max_uses}` : ''}
-                        </div>
-                        <div>
-                          <span className="font-medium">Udløber:</span> {code.valid_until ? new Date(code.valid_until).toLocaleDateString('da-DK') : 'Aldrig'}
+                          <span className="font-medium"><EditableContent contentKey="discount-codes-manager-udloeber" fallback="Udløber:" /></span> {code.valid_until ? new Date(code.valid_until).toLocaleDateString('da-DK') : 'Aldrig'}
                         </div>
                       </div>
                     </div>

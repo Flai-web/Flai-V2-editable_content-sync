@@ -170,8 +170,7 @@ const AddressZonesManager: React.FC = () => {
               <p className="text-xl font-bold">
                 {addressZones.length > 0
                   ? Math.round(addressZones.reduce((sum, z) => sum + z.radius_km, 0) / addressZones.length)
-                  : 0} km
-              </p>
+                  : 0} <EditableContent contentKey="address-zones-manager-km" fallback="km" /></p>
             </div>
             <Circle className="text-primary" size={20} />
           </div>
@@ -376,7 +375,7 @@ const AddressZonesManager: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-neutral-300 mb-1">{zone.center_address}</p>
-                    <p className="text-sm text-neutral-400">Radius: {zone.radius_km} km</p>
+                    <p className="text-sm text-neutral-400"><EditableContent contentKey="address-zones-manager-radius" fallback="Radius:" />{zone.radius_km} km</p>
                     <p className="text-xs text-neutral-500 mt-2">
                       <EditableContent contentKey="admin-zones-created-label" fallback="Oprettet:" />{' '}
                       {new Date(zone.created_at).toLocaleDateString('da-DK')}

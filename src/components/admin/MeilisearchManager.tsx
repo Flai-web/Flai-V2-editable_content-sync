@@ -3,6 +3,7 @@ import { Search, RefreshCw, CheckCircle, XCircle, Database, Zap, AlertTriangle }
 import { syncAllToMeilisearch, getMeilisearchIndexStats } from '../../utils/meilisearchSync';
 import { getMeilisearchHealth } from '../../utils/meilisearch';
 import toast from 'react-hot-toast';
+import EditableContent from '../EditableContent';
 
 interface IndexStat {
   numberOfDocuments: number;
@@ -77,15 +78,15 @@ const MeilisearchManager: React.FC = () => {
             <Search size={20} className="text-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Meilisearch</h2>
-            <p className="text-sm text-neutral-400">Søgeindeks administration</p>
+            <h2 className="text-lg font-semibold"><EditableContent contentKey="meilisearch-manager-meilisearch" fallback="Meilisearch" /></h2>
+            <p className="text-sm text-neutral-400"><EditableContent contentKey="meilisearch-manager-soegeindeks-administration" fallback="Søgeindeks administration" /></p>
           </div>
         </div>
 
         {health && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-lg text-sm text-green-400">
             <CheckCircle size={14} />
-            {health.status} · v{health.version}
+            {health.status} <EditableContent contentKey="meilisearch-manager-v" fallback="· v" />{health.version}
           </div>
         )}
       </div>
@@ -109,7 +110,7 @@ const MeilisearchManager: React.FC = () => {
                   <span className="text-2xl font-bold text-white">
                     {stat?.numberOfDocuments === -1 ? '—' : (stat?.numberOfDocuments ?? 0)}
                   </span>
-                  <span className="text-xs text-neutral-500 mb-0.5">docs</span>
+                  <span className="text-xs text-neutral-500 mb-0.5"><EditableContent contentKey="meilisearch-manager-docs" fallback="docs" /></span>
                 </div>
               )}
             </div>
@@ -123,12 +124,10 @@ const MeilisearchManager: React.FC = () => {
           <div>
             <h3 className="font-medium mb-1 flex items-center gap-2">
               <Database size={16} className="text-primary" />
-              Fuld Genindeksering
-            </h3>
+              <EditableContent contentKey="meilisearch-manager-fuld-genindeksering" fallback="Fuld Genindeksering" /></h3>
             <p className="text-sm text-neutral-400">
-              Synkroniserer alle produkter, portfolio, sider og sideindhold fra Supabase til Meilisearch.
-              Kør dette efter større dataopdateringer.
-            </p>
+              <EditableContent contentKey="meilisearch-manager-synkroniserer-alle-produkter-portfolio-sider" fallback="Synkroniserer alle produkter, portfolio, sider og sideindhold fra Supabase til Meilisearch.
+              Kør dette efter større dataopdateringer." /></p>
           </div>
           <button
             onClick={handleSync}
@@ -189,14 +188,13 @@ const MeilisearchManager: React.FC = () => {
 
       {/* Info box */}
       <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700/50 text-sm text-neutral-400">
-        <p className="font-medium text-neutral-300 mb-1">💡 Automatisk synkronisering</p>
+        <p className="font-medium text-neutral-300 mb-1"><EditableContent contentKey="meilisearch-manager-automatisk-synkronisering" fallback="💡 Automatisk synkronisering" /></p>
         <p>
-          Produkter og portfolio opdateres automatisk i Meilisearch via{' '}
-          <code className="text-primary bg-primary/10 px-1 rounded">syncProductToMeilisearch()</code> og{' '}
+          <EditableContent contentKey="meilisearch-manager-produkter-og-portfolio-opdateres-automatisk" fallback="Produkter og portfolio opdateres automatisk i Meilisearch via" />{' '}
+          <code className="text-primary bg-primary/10 px-1 rounded">syncProductToMeilisearch()</code> <EditableContent contentKey="meilisearch-manager-og" fallback="og" />{' '}
           <code className="text-primary bg-primary/10 px-1 rounded">syncPortfolioItemToMeilisearch()</code>{' '}
-          fra <code className="text-primary bg-primary/10 px-1 rounded">meilisearchSync.ts</code>.
-          Brug "Fuld Genindeksering" kun ved behov.
-        </p>
+          <EditableContent contentKey="meilisearch-manager-fra" fallback="fra" /><code className="text-primary bg-primary/10 px-1 rounded">meilisearchSync.ts</code><EditableContent contentKey="meilisearch-manager-brug-fuld-genindeksering-kun-ved" fallback=".
+          Brug &quot;Fuld Genindeksering&quot; kun ved behov." /></p>
       </div>
     </div>
   );

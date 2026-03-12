@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../utils/supabase';
 import { getAutoDeployMsRemaining, cancelAutoDeploy } from '../../hooks/useSiteContent';
 import toast from 'react-hot-toast';
+import EditableContent from '../EditableContent';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface DeployResult {
@@ -109,8 +110,8 @@ const AutoDeployCountdown: React.FC<{ onCancel: () => void }> = ({ onCancel }) =
     <div className="flex items-center gap-3 bg-yellow-900/30 border border-yellow-700/50 rounded-lg px-4 py-3">
       <Clock size={16} className="text-yellow-400 shrink-0 animate-pulse" />
       <div className="flex-1">
-        <p className="text-sm text-yellow-300 font-medium">Auto-deploy om <span className="font-mono font-bold">{formatMs(msLeft)}</span></p>
-        <p className="text-xs text-yellow-500">Hver indholds-ændring nulstiller timeren</p>
+        <p className="text-sm text-yellow-300 font-medium"><EditableContent contentKey="deploy-content-manager-auto-deploy-om" fallback="Auto-deploy om" /><span className="font-mono font-bold">{formatMs(msLeft)}</span></p>
+        <p className="text-xs text-yellow-500"><EditableContent contentKey="deploy-content-manager-hver-indholds-aendring-nulstiller-timeren" fallback="Hver indholds-ændring nulstiller timeren" /></p>
       </div>
       <button onClick={onCancel} className="p-1 rounded hover:bg-yellow-800/50 text-yellow-400 hover:text-yellow-200 transition-colors"><X size={14} /></button>
     </div>
@@ -163,7 +164,7 @@ const UrlPickerModal: React.FC<{
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-700 shrink-0">
           <div className="flex items-center gap-2">
             <Globe size={20} className="text-primary" />
-            <h3 className="text-lg font-bold text-white">Vælg sider at gøre redigerbare</h3>
+            <h3 className="text-lg font-bold text-white"><EditableContent contentKey="deploy-content-manager-vaelg-sider-at-goere-redigerbare" fallback="Vælg sider at gøre redigerbare" /></h3>
           </div>
           <button onClick={onClose} className="p-1 rounded hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors"><X size={18} /></button>
         </div>
@@ -172,23 +173,22 @@ const UrlPickerModal: React.FC<{
         <div className="mx-5 mt-4 bg-blue-900/20 border border-blue-700/40 rounded-lg px-4 py-3 flex gap-2 shrink-0">
           <Info size={15} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-300">
-            For hver URL scannes sidens fil <span className="text-blue-200 font-medium">og alle importerede komponenter</span> rekursivt.
-            Konverterer automatisk: bare JSX-tekst, <code className="bg-neutral-800 px-1 rounded">{'{"streng"}'}</code>,{' '}
-            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald og <code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> i objekt-arrays.
-            Vælg <span className="text-blue-200 font-medium">Layout</span> for NavBar/Footer — de inkluderes <em>kun</em> når du vælger dem.
-          </p>
+            <EditableContent contentKey="deploy-content-manager-for-hver-url-scannes-sidens" fallback="For hver URL scannes sidens fil" /><span className="text-blue-200 font-medium"><EditableContent contentKey="deploy-content-manager-og-alle-importerede-komponenter" fallback="og alle importerede komponenter" /></span> <EditableContent contentKey="deploy-content-manager-rekursivt-konverterer-automatisk-bare-jsx-tekst" fallback="rekursivt.
+            Konverterer automatisk: bare JSX-tekst," /><code className="bg-neutral-800 px-1 rounded">{'{"streng"}'}</code>,{' '}
+            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> <EditableContent contentKey="deploy-content-manager-kald-og" fallback="kald og" /><code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> <EditableContent contentKey="deploy-content-manager-i-objekt-arrays-vaelg" fallback="i objekt-arrays.
+            Vælg" /><span className="text-blue-200 font-medium"><EditableContent contentKey="deploy-content-manager-layout" fallback="Layout" /></span> <EditableContent contentKey="deploy-content-manager-for-navbar-footer-de-inkluderes" fallback="for NavBar/Footer — de inkluderes" /><em><EditableContent contentKey="deploy-content-manager-kun" fallback="kun" /></em> <EditableContent contentKey="deploy-content-manager-naar-du-vaelger-dem" fallback="når du vælger dem." /></p>
         </div>
 
         {/* Quick select */}
         <div className="px-5 pt-3 flex flex-wrap gap-2 shrink-0">
-          <button onClick={selectAll}  className="text-xs px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors">Vælg alle</button>
-          <button onClick={clearAll}   className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">Fravælg alle</button>
+          <button onClick={selectAll}  className="text-xs px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors"><EditableContent contentKey="deploy-content-manager-vaelg-alle" fallback="Vælg alle" /></button>
+          <button onClick={clearAll}   className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors"><EditableContent contentKey="deploy-content-manager-fravaelg-alle" fallback="Fravælg alle" /></button>
           {groups.map(g => (
             <button key={g} onClick={() => selectGroup(g)} className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">
               + {g}
             </button>
           ))}
-          <span className="ml-auto text-xs text-neutral-400 self-center">{selected.size} valgt</span>
+          <span className="ml-auto text-xs text-neutral-400 self-center">{selected.size} <EditableContent contentKey="deploy-content-manager-valgt" fallback="valgt" /></span>
         </div>
 
         {/* Route list */}
@@ -218,7 +218,7 @@ const UrlPickerModal: React.FC<{
 
           {/* Custom URLs */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Brugerdefineret URL</p>
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2"><EditableContent contentKey="deploy-content-manager-brugerdefineret-url" fallback="Brugerdefineret URL" /></p>
             {customUrls.map(url => (
               <label key={url} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-700/60 cursor-pointer group border border-transparent hover:border-neutral-600 transition-all mb-1">
                 <input
@@ -251,15 +251,14 @@ const UrlPickerModal: React.FC<{
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors shrink-0
                   ${!customInput.trim() ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed' : 'bg-primary/20 hover:bg-primary/30 text-primary'}`}
               >
-                <Plus size={13} /> Tilføj
-              </button>
+                <Plus size={13} /> <EditableContent contentKey="deploy-content-manager-tilfoej" fallback="Tilføj" /></button>
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-neutral-700 flex gap-3 shrink-0">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-medium transition-colors">Annuller</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-medium transition-colors"><EditableContent contentKey="deploy-content-manager-annuller" fallback="Annuller" /></button>
           <button
             disabled={selected.size === 0}
             onClick={() => onConfirm([...selected])}
@@ -267,7 +266,7 @@ const UrlPickerModal: React.FC<{
               ${selected.size === 0 ? 'bg-neutral-600 text-neutral-500 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 text-white'}`}
           >
             <PlusSquare size={15} />
-            Scan {selected.size} side{selected.size !== 1 ? 'r' : ''}
+            <EditableContent contentKey="deploy-content-manager-scan" fallback="Scan" />{selected.size} <EditableContent contentKey="deploy-content-manager-side" fallback="side" />{selected.size !== 1 ? 'r' : ''}
           </button>
         </div>
       </div>
@@ -311,12 +310,11 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
           </p>
           {hasBlocked && hasCommit && (
             <p className="text-xs text-amber-400 mt-0.5">
-              {result.blockedFiles.length} fil{result.blockedFiles.length !== 1 ? 'er' : ''} kunne ikke committes — kræver manuel ret
-            </p>
+              {result.blockedFiles.length} <EditableContent contentKey="deploy-content-manager-fil" fallback="fil" />{result.blockedFiles.length !== 1 ? 'er' : ''} <EditableContent contentKey="deploy-content-manager-kunne-ikke-committes-kraever-manuel" fallback="kunne ikke committes — kræver manuel ret" /></p>
           )}
           {result.commitSha && (
             <a href={result.commitUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline mt-0.5">
-              <ExternalLink size={11} /> Commit: {result.commitSha.slice(0, 7)}
+              <ExternalLink size={11} /> <EditableContent contentKey="deploy-content-manager-commit" fallback="Commit:" />{result.commitSha.slice(0, 7)}
             </a>
           )}
         </div>
@@ -327,22 +325,22 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Globe size={15} className="text-neutral-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-neutral-300">{result.scannedFiles}</p>
-          <p className="text-xs text-neutral-500">Scannet</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-scannet" fallback="Scannet" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <FileCode size={15} className="text-blue-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-blue-400">{result.modifiedFiles.length}</p>
-          <p className="text-xs text-neutral-500">Ændret</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-aendret" fallback="Ændret" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Tag size={15} className="text-green-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-green-400">{result.addedKeys.length}</p>
-          <p className="text-xs text-neutral-500">Nøgler</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-noegler" fallback="Nøgler" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <ShieldAlert size={15} className={hasBlocked ? 'text-amber-400 mx-auto mb-1' : 'text-neutral-600 mx-auto mb-1'} />
           <p className={`text-xl font-bold ${hasBlocked ? 'text-amber-400' : 'text-neutral-600'}`}>{(result.blockedFiles ?? []).length}</p>
-          <p className="text-xs text-neutral-500">Blokeret</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-blokeret" fallback="Blokeret" /></p>
         </div>
       </div>
 
@@ -377,10 +375,9 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
           >
             <div className="space-y-3">
               <p className="text-xs text-amber-400/80">
-                Disse filer indeholder JSX-fejl der ikke kunne auto-rettes (fx <code className="bg-neutral-800 px-1 rounded">&lt;EditableContent&gt;</code> inde i{' '}
-                <code className="bg-neutral-800 px-1 rounded">&lt;code&gt;</code> eller ved siden af et <code className="bg-neutral-800 px-1 rounded">{'{'}</code>-udtryk).{' '}
-                Resten af filerne er committed normalt. Ret disse manuelt og kør scanningen igen.
-              </p>
+                <EditableContent contentKey="deploy-content-manager-disse-filer-indeholder-jsx-fejl-der" fallback="Disse filer indeholder JSX-fejl der ikke kunne auto-rettes (fx" /><code className="bg-neutral-800 px-1 rounded">&lt;EditableContent&gt;</code> <EditableContent contentKey="deploy-content-manager-inde-i" fallback="inde i" />{' '}
+                <code className="bg-neutral-800 px-1 rounded">&lt;code&gt;</code> <EditableContent contentKey="deploy-content-manager-eller-ved-siden-af-et" fallback="eller ved siden af et" /><code className="bg-neutral-800 px-1 rounded">{'{'}</code><EditableContent contentKey="deploy-content-manager-udtryk" fallback="-udtryk)." />{' '}
+                <EditableContent contentKey="deploy-content-manager-resten-af-filerne-er-committed" fallback="Resten af filerne er committed normalt. Ret disse manuelt og kør scanningen igen." /></p>
               {result.blockedFiles.map((bf, i) => (
                 <div key={i} className="bg-neutral-900/60 rounded-lg p-3 space-y-2">
                   <div className="flex items-center gap-2">
@@ -390,7 +387,7 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
                   <p className="text-xs text-neutral-400 pl-5">{bf.reason}</p>
                   {bf.unfixedErrors.map((e, j) => (
                     <div key={j} className="pl-5 space-y-0.5">
-                      <p className="text-xs text-red-300 font-medium">Linje {e.line}</p>
+                      <p className="text-xs text-red-300 font-medium"><EditableContent contentKey="deploy-content-manager-linje" fallback="Linje" />{e.line}</p>
                       <p className="text-xs text-yellow-200/70 font-mono break-all">{e.issue}</p>
                       <p className="text-xs text-neutral-500 font-mono truncate">"{e.text}"</p>
                     </div>
@@ -410,13 +407,12 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
           >
             <div className="space-y-2">
               <p className="text-xs text-yellow-400/80 mb-2">
-                Disse tekst-noder var i ugyldige JSX-placeringer og er automatisk rullet tilbage til original tekst.
-              </p>
+                <EditableContent contentKey="deploy-content-manager-disse-tekst-noder-var-i-ugyldige" fallback="Disse tekst-noder var i ugyldige JSX-placeringer og er automatisk rullet tilbage til original tekst." /></p>
               {result.jsxErrors.filter(e => e.autoFixed).map((e, i) => (
                 <div key={i} className="bg-neutral-900/60 rounded p-2 space-y-0.5">
                   <div className="flex items-center gap-2">
                     <CheckCircle size={12} className="text-green-400 shrink-0" />
-                    <span className="text-xs font-medium text-green-300">Auto-rettet — linje {e.line}</span>
+                    <span className="text-xs font-medium text-green-300"><EditableContent contentKey="deploy-content-manager-auto-rettet-linje" fallback="Auto-rettet — linje" />{e.line}</span>
                     <span className="text-xs text-neutral-500 font-mono ml-auto truncate max-w-[140px]">{e.file.split('/').pop()}</span>
                   </div>
                   <p className="text-xs text-yellow-200/70 font-mono break-all pl-4">{e.issue}</p>
@@ -579,21 +575,21 @@ const DeployContentManager: React.FC = () => {
       <div className="flex items-center gap-3">
         <GitBranch size={24} className="text-primary" />
         <div>
-          <h2 className="text-xl font-bold text-white">Deploy til GitHub</h2>
-          <p className="text-sm text-neutral-400">Bager redigerbart indhold ind i kildekoden som hardcoded værdier</p>
+          <h2 className="text-xl font-bold text-white"><EditableContent contentKey="deploy-content-manager-deploy-til-github" fallback="Deploy til GitHub" /></h2>
+          <p className="text-sm text-neutral-400"><EditableContent contentKey="deploy-content-manager-bager-redigerbart-indhold-ind-i" fallback="Bager redigerbart indhold ind i kildekoden som hardcoded værdier" /></p>
         </div>
       </div>
 
       <div className="bg-neutral-700/40 border border-neutral-600 rounded-lg p-4 flex gap-3">
         <Info size={18} className="text-blue-400 shrink-0 mt-0.5" />
         <div className="text-sm text-neutral-300 space-y-1">
-          <p>Deploy-funktionen synkroniser ændret indhold fra databasen tilbage til kildekoden:</p>
+          <p><EditableContent contentKey="deploy-content-manager-deploy-funktionen-synkroniser-aendret-indhold-fra" fallback="Deploy-funktionen synkroniser ændret indhold fra databasen tilbage til kildekoden:" /></p>
           <ol className="list-decimal list-inside space-y-0.5 text-neutral-400">
-            <li>Henter alle rækker fra <code className="text-xs bg-neutral-800 px-1 rounded">site_content</code></li>
-            <li>Opdaterer <code className="text-xs bg-neutral-800 px-1 rounded">fallback</code>-værdier i kildefilerne</li>
-            <li>Committer til GitHub + trigger Netlify rebuild</li>
+            <li><EditableContent contentKey="deploy-content-manager-henter-alle-raekker-fra" fallback="Henter alle rækker fra" /><code className="text-xs bg-neutral-800 px-1 rounded">site_content</code></li>
+            <li><EditableContent contentKey="deploy-content-manager-opdaterer" fallback="Opdaterer" /><code className="text-xs bg-neutral-800 px-1 rounded">fallback</code><EditableContent contentKey="deploy-content-manager-vaerdier-i-kildefilerne" fallback="-værdier i kildefilerne" /></li>
+            <li><EditableContent contentKey="deploy-content-manager-committer-til-github-trigger-netlify" fallback="Committer til GitHub + trigger Netlify rebuild" /></li>
           </ol>
-          <p className="text-neutral-500 text-xs mt-1">Auto-deploy sker 8 minutter efter den seneste ændring.</p>
+          <p className="text-neutral-500 text-xs mt-1"><EditableContent contentKey="deploy-content-manager-auto-deploy-sker-8-minutter-efter" fallback="Auto-deploy sker 8 minutter efter den seneste ændring." /></p>
         </div>
       </div>
 
@@ -602,16 +598,16 @@ const DeployContentManager: React.FC = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-neutral-700/50 rounded-lg p-4 border border-neutral-600">
-          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Klar til deploy</p>
+          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1"><EditableContent contentKey="deploy-content-manager-klar-til-deploy" fallback="Klar til deploy" /></p>
           <p className="text-3xl font-bold text-white">{contentCount === null ? '…' : contentCount}</p>
-          <p className="text-xs text-neutral-500 mt-1">rækker i site_content</p>
+          <p className="text-xs text-neutral-500 mt-1"><EditableContent contentKey="deploy-content-manager-raekker-i-site-content" fallback="rækker i site_content" /></p>
         </div>
         <div className="bg-neutral-700/50 rounded-lg p-4 border border-neutral-600 flex flex-col justify-between">
-          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-2">Status</p>
-          {deployStatus === 'idle'    && <span className="text-sm text-neutral-400">Klar</span>}
-          {deployStatus === 'loading' && <span className="flex items-center gap-2 text-sm text-yellow-400"><RefreshCw size={14} className="animate-spin" /> Deployer…</span>}
-          {deployStatus === 'success' && <span className="flex items-center gap-2 text-sm text-green-400"><CheckCircle size={14} /> Gennemført</span>}
-          {deployStatus === 'error'   && <span className="flex items-center gap-2 text-sm text-red-400"><XCircle size={14} /> Fejl</span>}
+          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-2"><EditableContent contentKey="deploy-content-manager-status" fallback="Status" /></p>
+          {deployStatus === 'idle'    && <span className="text-sm text-neutral-400"><EditableContent contentKey="deploy-content-manager-klar" fallback="Klar" /></span>}
+          {deployStatus === 'loading' && <span className="flex items-center gap-2 text-sm text-yellow-400"><RefreshCw size={14} className="animate-spin" /> <EditableContent contentKey="deploy-content-manager-deployer" fallback="Deployer…" /></span>}
+          {deployStatus === 'success' && <span className="flex items-center gap-2 text-sm text-green-400"><CheckCircle size={14} /> <EditableContent contentKey="deploy-content-manager-gennemfoert" fallback="Gennemført" /></span>}
+          {deployStatus === 'error'   && <span className="flex items-center gap-2 text-sm text-red-400"><XCircle size={14} /> <EditableContent contentKey="deploy-content-manager-fejl" fallback="Fejl" /></span>}
         </div>
       </div>
 
@@ -637,25 +633,24 @@ const DeployContentManager: React.FC = () => {
               : 'bg-neutral-700/60 border-neutral-500 hover:bg-neutral-600 hover:border-primary/60 text-white active:scale-[0.98]'}`}
         >
           {addStatus === 'scanning'
-            ? <><RefreshCw size={17} className="animate-spin" /> Scanner {scanningUrls.length} side{scanningUrls.length !== 1 ? 'r' : ''}…</>
-            : <><PlusSquare size={17} className="text-primary" /> Gør tekst redigerbar</>}
+            ? <><RefreshCw size={17} className="animate-spin" /> <EditableContent contentKey="deploy-content-manager-scanner" fallback="Scanner" />{scanningUrls.length} side{scanningUrls.length !== 1 ? 'r' : ''}…</>
+            : <><PlusSquare size={17} className="text-primary" /> <EditableContent contentKey="deploy-content-manager-goer-tekst-redigerbar" fallback="Gør tekst redigerbar" /></>}
         </button>
       </div>
 
       {contentCount === 0 && deployStatus !== 'loading' && (
-        <p className="text-center text-sm text-neutral-500">Ingen redigerbart indhold at deploye – databasen er ren.</p>
+        <p className="text-center text-sm text-neutral-500"><EditableContent contentKey="deploy-content-manager-ingen-redigerbart-indhold-at-deploye" fallback="Ingen redigerbart indhold at deploye – databasen er ren." /></p>
       )}
 
       {/* Hint */}
       <div className="bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 flex gap-2">
         <Globe size={14} className="text-primary shrink-0 mt-0.5" />
         <p className="text-xs text-neutral-400">
-          <span className="text-neutral-200 font-medium">Gør tekst redigerbar</span> — Vælg sider via URL, og backend'en scanner siden og alle importerede komponenter rekursivt.
-          Konverterer bare JSX-tekst, <code className="bg-neutral-900 px-1 rounded text-neutral-300">{"streng"}</code>-udtryk,{' '}
-          <code className="bg-neutral-900 px-1 rounded text-neutral-300">getContent()</code> kald og objekt-labels til{' '}
-          <code className="bg-neutral-900 px-1 rounded text-neutral-300">&lt;EditableContent /&gt;</code>.
-          Filer med ikke-auto-rettelige JSX-fejl committes <em>ikke</em> — resten fortsætter normalt.
-        </p>
+          <span className="text-neutral-200 font-medium">Gør tekst redigerbar</span> <EditableContent contentKey="deploy-content-manager-vaelg-sider-via-url-og" fallback="— Vælg sider via URL, og backend'en scanner siden og alle importerede komponenter rekursivt.
+          Konverterer bare JSX-tekst," /><code className="bg-neutral-900 px-1 rounded text-neutral-300">{"streng"}</code><EditableContent contentKey="deploy-content-manager-udtryk-2" fallback="-udtryk," />{' '}
+          <code className="bg-neutral-900 px-1 rounded text-neutral-300">getContent()</code> <EditableContent contentKey="deploy-content-manager-kald-og-objekt-labels-til" fallback="kald og objekt-labels til" />{' '}
+          <code className="bg-neutral-900 px-1 rounded text-neutral-300">&lt;EditableContent /&gt;</code><EditableContent contentKey="deploy-content-manager-filer-med-ikke-auto-rettelige-jsx-fejl-committes" fallback=".
+          Filer med ikke-auto-rettelige JSX-fejl committes" /><em><EditableContent contentKey="deploy-content-manager-ikke" fallback="ikke" /></em> <EditableContent contentKey="deploy-content-manager-resten-fortsaetter-normalt" fallback="— resten fortsætter normalt." /></p>
       </div>
 
       {addResult && <AddResultPanel result={addResult} />}
@@ -703,7 +698,7 @@ const DeployContentManager: React.FC = () => {
             )}
             {deployResult.skippedKeys.length > 0 && (
               <Collapsible title={`Sprunget over (${deployResult.skippedKeys.length})`} color="yellow" open={!!expanded['skipped']} onToggle={() => toggle('skipped')}>
-                <p className="text-xs text-neutral-400 mb-2">Disse nøgler er i databasen men mangler i kildekoden som <code className="bg-neutral-800 px-1 rounded">fallback</code>.</p>
+                <p className="text-xs text-neutral-400 mb-2"><EditableContent contentKey="deploy-content-manager-disse-noegler-er-i-databasen" fallback="Disse nøgler er i databasen men mangler i kildekoden som" /><code className="bg-neutral-800 px-1 rounded">fallback</code>.</p>
                 <TagList items={deployResult.skippedKeys} color="yellow" />
               </Collapsible>
             )}

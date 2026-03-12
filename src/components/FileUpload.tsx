@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, Youtube, Images, Settings2 } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import toast from 'react-hot-toast';
+import EditableContent from './EditableContent';
 
 interface ImageUploadProps {
   onImageUploaded: (url: string) => void;
@@ -238,14 +239,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       {compressionInfo && (
         <div className="p-3 bg-neutral-800/80 border border-neutral-700 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wide">Komprimering</span>
+            <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wide"><EditableContent contentKey="file-upload-komprimering" fallback="Komprimering" /></span>
             <span className="text-xs font-bold text-green-400 bg-green-400/10 border border-green-400/20 rounded-full px-2 py-0.5">
               ↓ {compressionInfo.reductionPct.toFixed(1)}%
             </span>
           </div>
           <div className="flex items-center gap-2 text-xs">
             <div className="flex-1 text-center bg-neutral-700/40 rounded p-1.5">
-              <div className="text-neutral-500 mb-0.5">Original</div>
+              <div className="text-neutral-500 mb-0.5"><EditableContent contentKey="file-upload-original" fallback="Original" /></div>
               <div className="text-neutral-200 font-medium">{fmtBytes(compressionInfo.originalSize)}</div>
             </div>
             <svg className="text-neutral-600 shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -274,15 +275,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         {uploading ? (
           <div className="flex items-center justify-center space-x-2 text-neutral-400">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
-            <span className="text-sm">Komprimerer og uploader på serveren...</span>
+            <span className="text-sm"><EditableContent contentKey="file-upload-komprimerer-og-uploader-paa-serveren" fallback="Komprimerer og uploader på serveren..." /></span>
           </div>
         ) : (
           <div className="space-y-1">
             <div className="flex items-center justify-center space-x-2 text-neutral-400">
               <Upload size={18} />
-              <span className="text-sm">Klik eller træk et billede hertil</span>
+              <span className="text-sm"><EditableContent contentKey="file-upload-klik-eller-traek-et-billede" fallback="Klik eller træk et billede hertil" /></span>
             </div>
-            <p className="text-xs text-neutral-500">JPG · PNG · WebP · AVIF · GIF — konverteres til WebP (100–500 KB)</p>
+            <p className="text-xs text-neutral-500"><EditableContent contentKey="file-upload-jpg-png-webp-avif-gif" fallback="JPG · PNG · WebP · AVIF · GIF — konverteres til WebP (100–500 KB)" /></p>
           </div>
         )}
       </div>
@@ -300,7 +301,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-center space-x-2 text-neutral-300">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
-                  <span className="text-sm">Uploader {uploadProgress.done} / {uploadProgress.total}...</span>
+                  <span className="text-sm"><EditableContent contentKey="file-upload-uploader" fallback="Uploader" />{uploadProgress.done} / {uploadProgress.total}...</span>
                 </div>
                 <div className="w-full bg-neutral-700 rounded-full h-1.5">
                   <div className="bg-primary h-1.5 rounded-full transition-all duration-300"
@@ -310,7 +311,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             ) : (
               <div className="flex items-center justify-center space-x-2 text-neutral-300">
                 <Images size={18} className="text-neutral-400" />
-                <span className="text-sm">Vælg flere billeder på én gang</span>
+                <span className="text-sm"><EditableContent contentKey="file-upload-vaelg-flere-billeder-paa-n" fallback="Vælg flere billeder på én gang" /></span>
               </div>
             )}
           </button>
@@ -323,7 +324,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           className="w-full flex items-center justify-between px-3 py-2 text-sm text-neutral-400 hover:text-white border border-neutral-700 hover:border-neutral-500 rounded-lg transition-colors">
           <div className="flex items-center space-x-2">
             <Settings2 size={15} />
-            <span>Komprimeringsindstillinger</span>
+            <span><EditableContent contentKey="file-upload-komprimeringsindstillinger" fallback="Komprimeringsindstillinger" /></span>
           </div>
           <span className="text-xs text-neutral-500">
             {compressionMode === 'quality' ? `${quality}% — ${qualityLabel(quality)}` : `Mål: ${targetKB} KB`}
@@ -349,8 +350,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             {compressionMode === 'quality' && (
               <div className="space-y-3">
                 <p className="text-xs text-neutral-500">
-                  Serveren starter ved denne kvalitet og reducerer automatisk, indtil filen er under {DEFAULT_TARGET_KB} KB.
-                </p>
+                  <EditableContent contentKey="file-upload-serveren-starter-ved-denne-kvalitet" fallback="Serveren starter ved denne kvalitet og reducerer automatisk, indtil filen er under" />{DEFAULT_TARGET_KB} <EditableContent contentKey="file-upload-kb" fallback="KB." /></p>
                 <input type="range" min={1} max={100} value={quality}
                   onChange={e => { const v = Number(e.target.value); setQuality(v); setQualityInput(String(v)); }}
                   className="w-full accent-primary" />
@@ -385,15 +385,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             {compressionMode === 'size' && (
               <div className="space-y-3">
                 <p className="text-xs text-neutral-500">
-                  Vælg et størrelsesmål mellem {MIN_TARGET_KB} KB og {MAX_TARGET_KB} KB.
-                  Serveren itererer automatisk til målet er opfyldt.
-                </p>
+                  <EditableContent contentKey="file-upload-vaelg-et-stoerrelsesmaal-mellem" fallback="Vælg et størrelsesmål mellem" />{MIN_TARGET_KB} <EditableContent contentKey="file-upload-kb-og" fallback="KB og" />{MAX_TARGET_KB} <EditableContent contentKey="file-upload-kb-serveren-itererer-automatisk-til" fallback="KB.
+                  Serveren itererer automatisk til målet er opfyldt." /></p>
                 <div className="flex items-center gap-2">
                   <input type="number" min={MIN_TARGET_KB} max={MAX_TARGET_KB} value={targetKBInput}
                     onChange={e => setTargetKBInput(e.target.value)}
                     onBlur={commitTargetKB} onKeyDown={e => e.key === 'Enter' && commitTargetKB()}
                     className="flex-1 px-3 py-2 text-sm bg-neutral-700 border border-neutral-600 rounded-lg focus:outline-none focus:border-primary" />
-                  <span className="text-sm text-neutral-400 shrink-0">KB</span>
+                  <span className="text-sm text-neutral-400 shrink-0"><EditableContent contentKey="file-upload-kb-2" fallback="KB" /></span>
                 </div>
                 <div className="flex gap-2">
                   {[{ label: '100 KB', kb: 100 }, { label: '200 KB', kb: 200 },
@@ -413,8 +412,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             )}
 
             <p className="text-xs text-neutral-500 border-t border-neutral-700 pt-3">
-              Al komprimering sker på serveren. Output er altid WebP. Videoer påvirkes ikke.
-            </p>
+              <EditableContent contentKey="file-upload-al-komprimering-sker-paa-serveren" fallback="Al komprimering sker på serveren. Output er altid WebP. Videoer påvirkes ikke." /></p>
           </div>
         )}
       </div>
@@ -425,7 +423,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           <button type="button" onClick={() => setShowYoutubeInput(true)}
             className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm text-neutral-400 hover:text-white border border-neutral-700 hover:border-neutral-500 rounded-lg transition-colors">
             <Youtube size={16} />
-            <span>Tilføj YouTube video i stedet</span>
+            <span><EditableContent contentKey="file-upload-tilfoej-youtube-video-i-stedet" fallback="Tilføj YouTube video i stedet" /></span>
           </button>
         ) : (
           <div className="flex space-x-2">
@@ -435,8 +433,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               className="form-input flex-1 text-sm" autoFocus />
             <button type="button" onClick={handleYoutubeSubmit}
               className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">
-              Tilføj
-            </button>
+              <EditableContent contentKey="file-upload-tilfoej" fallback="Tilføj" /></button>
             <button type="button" onClick={() => { setShowYoutubeInput(false); setYoutubeUrl(''); }}
               className="p-2 text-neutral-400 hover:text-white transition-colors">
               <X size={16} />

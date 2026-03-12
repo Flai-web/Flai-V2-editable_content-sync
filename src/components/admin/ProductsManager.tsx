@@ -363,9 +363,9 @@ const ProductsManager: React.FC = () => {
                 <div className="flex items-center justify-between text-xs text-neutral-400">
                   <span>0</span>
                   <span className="font-medium text-neutral-300">
-                    Værdi: {newProduct.array}
+                    <EditableContent contentKey="products-manager-vaerdi" fallback="Værdi:" />{newProduct.array}
                   </span>
-                  <span>Højest ({arrayBounds.max})</span>
+                  <span><EditableContent contentKey="products-manager-hoejest" fallback="Højest (" />{arrayBounds.max})</span>
                 </div>
                 <div className="relative">
                   <input
@@ -441,8 +441,7 @@ const ProductsManager: React.FC = () => {
                   className="text-sm text-primary hover:text-primary-dark"
                   disabled={newProduct.links.length >= 4}
                 >
-                  + Tilføj Link
-                </button>
+                  <EditableContent contentKey="products-manager-tilfoej-link" fallback="+ Tilføj Link" /></button>
               </div>
               {newProduct.links.map((link, index) => (
                 <div key={index} className="flex gap-2 mb-2">
@@ -708,7 +707,7 @@ const ProductsManager: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">{product.name}</h3>
-                      <p className="text-primary font-bold">{product.price} kr</p>
+                      <p className="text-primary font-bold">{product.price} <EditableContent contentKey="products-manager-kr" fallback="kr" /></p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

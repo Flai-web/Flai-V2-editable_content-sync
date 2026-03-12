@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import EditableContent from './EditableContent';
 
 interface Props {
   children: ReactNode;
@@ -37,21 +38,18 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="bg-neutral-700/20 rounded-lg p-8 text-center">
           <AlertTriangle size={48} className="text-error mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Noget gik galt</h3>
+          <h3 className="text-xl font-semibold mb-2"><EditableContent contentKey="error-boundary-noget-gik-galt" fallback="Noget gik galt" /></h3>
           <p className="text-neutral-400 mb-4">
-            Der opstod en fejl ved indlæsning af denne sektion.
-          </p>
+            <EditableContent contentKey="error-boundary-der-opstod-en-fejl-ved" fallback="Der opstod en fejl ved indlæsning af denne sektion." /></p>
           <button
             onClick={() => this.setState({ hasError: false, error: undefined, errorInfo: undefined })}
             className="btn-primary"
           >
-            Prøv igen
-          </button>
+            <EditableContent contentKey="error-boundary-proev-igen" fallback="Prøv igen" /></button>
           {this.state.error && (
             <details className="mt-4 text-left">
               <summary className="cursor-pointer text-sm text-neutral-400">
-                Fejldetaljer
-              </summary>
+                <EditableContent contentKey="error-boundary-fejldetaljer" fallback="Fejldetaljer" /></summary>
               <pre className="mt-2 text-xs bg-neutral-800 p-4 rounded overflow-auto">
                 {this.state.error.toString()}
                 {this.state.errorInfo?.componentStack}
