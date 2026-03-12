@@ -3,6 +3,7 @@ import { Upload, Trash2, Copy, Check, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
 import { compressImage } from '../../utils/imageCompression';
 import toast from 'react-hot-toast';
+import EditableContent from '../EditableContent';
 
 interface ExternalImage {
   id: string;
@@ -153,7 +154,7 @@ const ExternalImagesManager: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Eksterne Billeder</h2>
+        <h2 className="text-2xl font-bold"><EditableContent contentKey="external-images-manager-eksterne-billeder" fallback="Eksterne Billeder" /></h2>
         <label className="btn-primary flex items-center cursor-pointer">
           <Upload size={20} className="mr-2" />
           {uploading ? 'Uploader...' : 'Upload Billede'}
@@ -170,7 +171,7 @@ const ExternalImagesManager: React.FC = () => {
       <div className="bg-neutral-700/20 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-neutral-400 text-sm">Total Billeder</p>
+            <p className="text-neutral-400 text-sm"><EditableContent contentKey="external-images-manager-total-billeder" fallback="Total Billeder" /></p>
             <p className="text-xl font-bold">{images.length}</p>
           </div>
           <ImageIcon className="text-primary" size={20} />
@@ -180,7 +181,7 @@ const ExternalImagesManager: React.FC = () => {
       {images.length === 0 ? (
         <div className="text-center py-12 text-neutral-400">
           <ImageIcon size={48} className="mx-auto mb-4 opacity-50" />
-          <p>Ingen eksterne billeder fundet. Upload det første billede for at komme i gang.</p>
+          <p><EditableContent contentKey="external-images-manager-ingen-eksterne-billeder-fundet-upload" fallback="Ingen eksterne billeder fundet. Upload det første billede for at komme i gang." /></p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

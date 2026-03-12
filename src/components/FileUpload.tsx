@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, Youtube, Images, Settings2 } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import toast from 'react-hot-toast';
+import EditableContent from './EditableContent';
 
 interface ImageUploadProps {
   onImageUploaded: (url: string) => void;
@@ -238,14 +239,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       {compressionInfo && (
         <div className="p-3 bg-neutral-800/80 border border-neutral-700 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wide">Komprimering</span>
+            <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wide"><EditableContent contentKey="file-upload-komprimering" fallback="Komprimering" /></span>
             <span className="text-xs font-bold text-green-400 bg-green-400/10 border border-green-400/20 rounded-full px-2 py-0.5">
               ↓ {compressionInfo.reductionPct.toFixed(1)}%
             </span>
           </div>
           <div className="flex items-center gap-2 text-xs">
             <div className="flex-1 text-center bg-neutral-700/40 rounded p-1.5">
-              <div className="text-neutral-500 mb-0.5">Original</div>
+              <div className="text-neutral-500 mb-0.5"><EditableContent contentKey="file-upload-original" fallback="Original" /></div>
               <div className="text-neutral-200 font-medium">{fmtBytes(compressionInfo.originalSize)}</div>
             </div>
             <svg className="text-neutral-600 shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -274,13 +275,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         {uploading ? (
           <div className="flex items-center justify-center space-x-2 text-neutral-400">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
-            <span className="text-sm">Komprimerer og uploader på serveren...</span>
+            <span className="text-sm"><EditableContent contentKey="file-upload-komprimerer-og-uploader-paa-serveren" fallback="Komprimerer og uploader på serveren..." /></span>
           </div>
         ) : (
           <div className="space-y-1">
             <div className="flex items-center justify-center space-x-2 text-neutral-400">
               <Upload size={18} />
-              <span className="text-sm">Klik eller træk et billede hertil</span>
+              <span className="text-sm"><EditableContent contentKey="file-upload-klik-eller-traek-et-billede" fallback="Klik eller træk et billede hertil" /></span>
             </div>
             <p className="text-xs text-neutral-500">JPG · PNG · WebP · AVIF · GIF — konverteres til WebP (100–500 KB)</p>
           </div>
@@ -310,7 +311,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             ) : (
               <div className="flex items-center justify-center space-x-2 text-neutral-300">
                 <Images size={18} className="text-neutral-400" />
-                <span className="text-sm">Vælg flere billeder på én gang</span>
+                <span className="text-sm"><EditableContent contentKey="file-upload-vaelg-flere-billeder-paa-n" fallback="Vælg flere billeder på én gang" /></span>
               </div>
             )}
           </button>
@@ -323,7 +324,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           className="w-full flex items-center justify-between px-3 py-2 text-sm text-neutral-400 hover:text-white border border-neutral-700 hover:border-neutral-500 rounded-lg transition-colors">
           <div className="flex items-center space-x-2">
             <Settings2 size={15} />
-            <span>Komprimeringsindstillinger</span>
+            <span><EditableContent contentKey="file-upload-komprimeringsindstillinger" fallback="Komprimeringsindstillinger" /></span>
           </div>
           <span className="text-xs text-neutral-500">
             {compressionMode === 'quality' ? `${quality}% — ${qualityLabel(quality)}` : `Mål: ${targetKB} KB`}
@@ -365,8 +366,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {[{ label: 'Lav', value: 30 }, { label: 'Middel', value: 65 },
-                    { label: 'Høj', value: 82 }, { label: 'Maks', value: 95 }].map(p => (
+                  {[{ label: () => Lav, value: 30 }, { label: () => Middel, value: 65 },
+                    { label: () => Høj, value: 82 }, { label: () => Maks, value: 95 }].map(p => (
                     <button key={p.value} type="button"
                       onClick={() => { setQuality(p.value); setQualityInput(String(p.value)); }}
                       className={`flex-1 py-1 text-xs rounded border transition-colors ${
@@ -374,7 +375,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                           ? 'bg-primary/20 border-primary text-primary'
                           : 'bg-neutral-700/40 border-neutral-600 text-neutral-400 hover:border-neutral-500 hover:text-white'
                       }`}>
-                      {p.label}
+                      {p.label()}
                     </button>
                   ))}
                 </div>
@@ -405,7 +406,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                           ? 'bg-primary/20 border-primary text-primary'
                           : 'bg-neutral-700/40 border-neutral-600 text-neutral-400 hover:border-neutral-500 hover:text-white'
                       }`}>
-                      {p.label}
+                      {p.label()}
                     </button>
                   ))}
                 </div>
@@ -425,7 +426,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           <button type="button" onClick={() => setShowYoutubeInput(true)}
             className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm text-neutral-400 hover:text-white border border-neutral-700 hover:border-neutral-500 rounded-lg transition-colors">
             <Youtube size={16} />
-            <span>Tilføj YouTube video i stedet</span>
+            <span><EditableContent contentKey="file-upload-tilfoej-youtube-video-i-stedet" fallback="Tilføj YouTube video i stedet" /></span>
           </button>
         ) : (
           <div className="flex space-x-2">

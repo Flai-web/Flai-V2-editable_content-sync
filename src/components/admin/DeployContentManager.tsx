@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../utils/supabase';
 import { getAutoDeployMsRemaining, cancelAutoDeploy } from '../../hooks/useSiteContent';
 import toast from 'react-hot-toast';
+import EditableContent from '../EditableContent';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface DeployResult {
@@ -47,36 +48,36 @@ type AddStatus    = 'idle' | 'scanning' | 'success' | 'error';
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 const ROUTES: Array<{ url: string; label: string; group: string }> = [
   // Sider
-  { url: '/',                label: 'Forside',              group: 'Sider' },
-  { url: '/products',        label: 'Produkter',            group: 'Sider' },
-  { url: '/product/',        label: 'Produkt-detalje',      group: 'Sider' },
-  { url: '/portfolio',       label: 'Portfolio',            group: 'Sider' },
-  { url: '/search',          label: 'Søg',                  group: 'Sider' },
-  { url: '/coverage',        label: 'Dækningsområder',      group: 'Sider' },
-  { url: '/simple-request',  label: 'Simpel forespørgsel',  group: 'Sider' },
-  { url: '/booking/',        label: 'Booking',              group: 'Sider' },
-  { url: '/booking-success', label: 'Booking-bekræftelse',  group: 'Sider' },
-  { url: '/payment',         label: 'Betaling',             group: 'Sider' },
-  { url: '/donate/',         label: 'Donation',             group: 'Sider' },
-  { url: '/ratings',         label: 'Anmeldelser',          group: 'Sider' },
-  { url: '/rate-booking/',   label: 'Bedøm booking',        group: 'Sider' },
-  { url: '/unsubscribe',     label: 'Afmeld nyhedsbrev',    group: 'Sider' },
-  { url: '/file/gofile/',    label: 'Fil-download',         group: 'Sider' },
+  { url: '/',                label: () => Forside,              group: 'Sider' },
+  { url: '/products',        label: () => Produkter,            group: 'Sider' },
+  { url: '/product/',        label: () => Produkt-detalje,      group: 'Sider' },
+  { url: '/portfolio',       label: () => Portfolio,            group: 'Sider' },
+  { url: '/search',          label: () => Søg,                  group: 'Sider' },
+  { url: '/coverage',        label: () => Dækningsområder,      group: 'Sider' },
+  { url: '/simple-request',  label: () => Simpel forespørgsel,  group: 'Sider' },
+  { url: '/booking/',        label: () => Booking,              group: 'Sider' },
+  { url: '/booking-success', label: () => Booking-bekræftelse,  group: 'Sider' },
+  { url: '/payment',         label: () => Betaling,             group: 'Sider' },
+  { url: '/donate/',         label: () => Donation,             group: 'Sider' },
+  { url: '/ratings',         label: () => Anmeldelser,          group: 'Sider' },
+  { url: '/rate-booking/',   label: () => Bedøm booking,        group: 'Sider' },
+  { url: '/unsubscribe',     label: () => Afmeld nyhedsbrev,    group: 'Sider' },
+  { url: '/file/gofile/',    label: () => Fil-download,         group: 'Sider' },
   // Indhold
-  { url: '/terms',           label: 'Vilkår',               group: 'Indhold' },
-  { url: '/policies',        label: 'Privatpolitik',        group: 'Indhold' },
+  { url: '/terms',           label: () => Vilkår,               group: 'Indhold' },
+  { url: '/policies',        label: () => Privatpolitik,        group: 'Indhold' },
   // Konto
-  { url: '/auth',            label: 'Login / Opret konto',  group: 'Konto' },
-  { url: '/profile',         label: 'Profil',               group: 'Konto' },
-  { url: '/buy-credits',     label: 'Køb credits',          group: 'Konto' },
-  { url: '/reset-password',  label: 'Nulstil adgangskode',  group: 'Konto' },
-  { url: '/update-password', label: 'Opdater adgangskode',  group: 'Konto' },
-  { url: '/email-confirmed', label: 'Email bekræftet',      group: 'Konto' },
+  { url: '/auth',            label: () => Login / Opret konto,  group: 'Konto' },
+  { url: '/profile',         label: () => Profil,               group: 'Konto' },
+  { url: '/buy-credits',     label: () => Køb credits,          group: 'Konto' },
+  { url: '/reset-password',  label: () => Nulstil adgangskode,  group: 'Konto' },
+  { url: '/update-password', label: () => Opdater adgangskode,  group: 'Konto' },
+  { url: '/email-confirmed', label: () => Email bekræftet,      group: 'Konto' },
   // Admin
-  { url: '/admin',           label: 'Admin',                group: 'Admin' },
+  { url: '/admin',           label: () => Admin,                group: 'Admin' },
   // Layout — global components (not tied to any single page)
-  { url: '__navbar__',       label: 'NavBar',               group: 'Layout' },
-  { url: '__footer__',       label: 'Footer',               group: 'Layout' },
+  { url: '__navbar__',       label: () => NavBar,               group: 'Layout' },
+  { url: '__footer__',       label: () => Footer,               group: 'Layout' },
 ];
 
 function formatMs(ms: number): string {
@@ -103,7 +104,7 @@ const AutoDeployCountdown: React.FC<{ onCancel: () => void }> = ({ onCancel }) =
       <Clock size={16} className="text-yellow-400 shrink-0 animate-pulse" />
       <div className="flex-1">
         <p className="text-sm text-yellow-300 font-medium">Auto-deploy om <span className="font-mono font-bold">{formatMs(msLeft)}</span></p>
-        <p className="text-xs text-yellow-500">Hver indholds-ændring nulstiller timeren</p>
+        <p className="text-xs text-yellow-500"><EditableContent contentKey="deploy-content-manager-hver-indholds-aendring-nulstiller-timeren" fallback="Hver indholds-ændring nulstiller timeren" /></p>
       </div>
       <button onClick={onCancel} className="p-1 rounded hover:bg-yellow-800/50 text-yellow-400 hover:text-yellow-200 transition-colors"><X size={14} /></button>
     </div>
@@ -157,7 +158,7 @@ const UrlPickerModal: React.FC<{
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-700 shrink-0">
           <div className="flex items-center gap-2">
             <Globe size={20} className="text-primary" />
-            <h3 className="text-lg font-bold text-white">Vælg sider at gøre redigerbare</h3>
+            <h3 className="text-lg font-bold text-white"><EditableContent contentKey="deploy-content-manager-vaelg-sider-at-goere-redigerbare" fallback="Vælg sider at gøre redigerbare" /></h3>
           </div>
           <button onClick={onClose} className="p-1 rounded hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors"><X size={18} /></button>
         </div>
@@ -166,10 +167,10 @@ const UrlPickerModal: React.FC<{
         <div className="mx-5 mt-4 bg-blue-900/20 border border-blue-700/40 rounded-lg px-4 py-3 flex gap-2 shrink-0">
           <Info size={15} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-300">
-            For hver URL scannes sidens fil <span className="text-blue-200 font-medium">og alle importerede komponenter</span> rekursivt.
+            For hver URL scannes sidens fil <span className="text-blue-200 font-medium"><EditableContent contentKey="deploy-content-manager-og-alle-importerede-komponenter" fallback="og alle importerede komponenter" /></span> rekursivt.
             Konverterer automatisk: bare JSX-tekst, <code className="bg-neutral-800 px-1 rounded">{'{"streng"}'}</code>,{' '}
-            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald og <code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> i objekt-arrays.
-            Vælg <span className="text-blue-200 font-medium">Layout</span> for NavBar/Footer — de inkluderes <em>kun</em> når du vælger dem.
+            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald og <code className="bg-neutral-800 px-1 rounded">label: () => Tekst</code> i objekt-arrays.
+            Vælg <span className="text-blue-200 font-medium"><EditableContent contentKey="deploy-content-manager-layout" fallback="Layout" /></span> for NavBar/Footer — de inkluderes <em><EditableContent contentKey="deploy-content-manager-kun" fallback="kun" /></em> når du vælger dem.
           </p>
         </div>
 
@@ -200,7 +201,7 @@ const UrlPickerModal: React.FC<{
                       className="rounded accent-primary shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white font-medium group-hover:text-primary transition-colors">{route.label}</p>
+                      <p className="text-sm text-white font-medium group-hover:text-primary transition-colors">{route.label()}</p>
                       <p className="text-xs font-mono text-neutral-500">{route.url}</p>
                     </div>
                     <Layout size={13} className="text-neutral-600 group-hover:text-neutral-400 shrink-0" />
@@ -212,7 +213,7 @@ const UrlPickerModal: React.FC<{
 
           {/* Custom URLs */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Brugerdefineret URL</p>
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2"><EditableContent contentKey="deploy-content-manager-brugerdefineret-url" fallback="Brugerdefineret URL" /></p>
             {customUrls.map(url => (
               <label key={url} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-700/60 cursor-pointer group border border-transparent hover:border-neutral-600 transition-all mb-1">
                 <input
@@ -295,17 +296,17 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Globe size={15} className="text-neutral-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-neutral-300">{result.scannedFiles}</p>
-          <p className="text-xs text-neutral-500">Filer scannet</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-filer-scannet" fallback="Filer scannet" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <FileCode size={15} className="text-blue-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-blue-400">{result.modifiedFiles.length}</p>
-          <p className="text-xs text-neutral-500">Filer ændret</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-filer-aendret" fallback="Filer ændret" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Tag size={15} className="text-green-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-green-400">{result.addedKeys.length}</p>
-          <p className="text-xs text-neutral-500">Nøgler tilføjet</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-noegler-tilfoejet" fallback="Nøgler tilføjet" /></p>
         </div>
       </div>
       <div className="px-5 pb-5 space-y-3">
@@ -351,7 +352,7 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
                     <span className="text-xs text-neutral-500 font-mono ml-auto truncate max-w-[140px]">{e.file.split('/').pop()}</span>
                   </div>
                   <p className="text-xs text-yellow-200/70 font-mono break-all pl-4">{e.issue}</p>
-                  <p className="text-xs text-neutral-500 font-mono truncate pl-4">"{e.text}"</p>
+                  <p className="text-xs text-neutral-500 font-mono truncate pl-4">"{e.text()}"</p>
                 </div>
               ))}
             </div>
@@ -371,17 +372,17 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 const colorMap = {
-  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: 'text-green-400',  badge: 'bg-green-900/40 text-green-300'  },
-  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: 'text-blue-400',   badge: 'bg-blue-900/40 text-blue-300'    },
-  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: 'text-yellow-400', badge: 'bg-yellow-900/40 text-yellow-300' },
-  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: 'text-red-400',    badge: 'bg-red-900/40 text-red-300'      },
+  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: () => text-green-400,  badge: 'bg-green-900/40 text-green-300'  },
+  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: () => text-blue-400,   badge: 'bg-blue-900/40 text-blue-300'    },
+  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: () => text-yellow-400, badge: 'bg-yellow-900/40 text-yellow-300' },
+  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: () => text-red-400,    badge: 'bg-red-900/40 text-red-300'      },
 };
 
 const Collapsible: React.FC<{ title: string; color: keyof typeof colorMap; open: boolean; onToggle: () => void; children: React.ReactNode }> = ({ title, color, open, onToggle, children }) => {
   const c = colorMap[color];
   return (
     <div className={`rounded-lg border ${c.border} overflow-hidden`}>
-      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text} hover:brightness-110 transition-all`}>
+      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text()} hover:brightness-110 transition-all`}>
         <span>{title}</span><span className="text-xs opacity-60">{open ? '▲' : '▼'}</span>
       </button>
       {open && <div className="px-4 py-3 bg-neutral-800/50">{children}</div>}
@@ -498,21 +499,21 @@ const DeployContentManager: React.FC = () => {
       <div className="flex items-center gap-3">
         <GitBranch size={24} className="text-primary" />
         <div>
-          <h2 className="text-xl font-bold text-white">Deploy til GitHub</h2>
-          <p className="text-sm text-neutral-400">Bager redigerbart indhold ind i kildekoden som hardcoded værdier</p>
+          <h2 className="text-xl font-bold text-white"><EditableContent contentKey="deploy-content-manager-deploy-til-github" fallback="Deploy til GitHub" /></h2>
+          <p className="text-sm text-neutral-400"><EditableContent contentKey="deploy-content-manager-bager-redigerbart-indhold-ind-i" fallback="Bager redigerbart indhold ind i kildekoden som hardcoded værdier" /></p>
         </div>
       </div>
 
       <div className="bg-neutral-700/40 border border-neutral-600 rounded-lg p-4 flex gap-3">
         <Info size={18} className="text-blue-400 shrink-0 mt-0.5" />
         <div className="text-sm text-neutral-300 space-y-1">
-          <p>Deploy-funktionen synkroniser ændret indhold fra databasen tilbage til kildekoden:</p>
+          <p><EditableContent contentKey="deploy-content-manager-deploy-funktionen-synkroniser-aendret-indhold-fra" fallback="Deploy-funktionen synkroniser ændret indhold fra databasen tilbage til kildekoden:" /></p>
           <ol className="list-decimal list-inside space-y-0.5 text-neutral-400">
-            <li>Henter alle rækker fra <code className="text-xs bg-neutral-800 px-1 rounded">site_content</code></li>
-            <li>Opdaterer <code className="text-xs bg-neutral-800 px-1 rounded">fallback</code>-værdier i kildefilerne</li>
-            <li>Committer til GitHub + trigger Netlify rebuild</li>
+            <li><EditableContent contentKey="deploy-content-manager-henter-alle-raekker-fra" fallback="Henter alle rækker fra" /> <code className="text-xs bg-neutral-800 px-1 rounded">site_content</code></li>
+            <li><EditableContent contentKey="deploy-content-manager-opdaterer" fallback="Opdaterer" /> <code className="text-xs bg-neutral-800 px-1 rounded">fallback</code>-værdier i kildefilerne</li>
+            <li><EditableContent contentKey="deploy-content-manager-committer-til-github-trigger-netlify" fallback="Committer til GitHub + trigger Netlify rebuild" /></li>
           </ol>
-          <p className="text-neutral-500 text-xs mt-1">Auto-deploy sker 8 minutter efter den seneste ændring.</p>
+          <p className="text-neutral-500 text-xs mt-1"><EditableContent contentKey="deploy-content-manager-auto-deploy-sker-8-minutter-efter" fallback="Auto-deploy sker 8 minutter efter den seneste ændring." /></p>
         </div>
       </div>
 
@@ -521,12 +522,12 @@ const DeployContentManager: React.FC = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-neutral-700/50 rounded-lg p-4 border border-neutral-600">
-          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Klar til deploy</p>
+          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1"><EditableContent contentKey="deploy-content-manager-klar-til-deploy" fallback="Klar til deploy" /></p>
           <p className="text-3xl font-bold text-white">{contentCount === null ? '…' : contentCount}</p>
-          <p className="text-xs text-neutral-500 mt-1">rækker i site_content</p>
+          <p className="text-xs text-neutral-500 mt-1"><EditableContent contentKey="deploy-content-manager-raekker-i-site-content" fallback="rækker i site_content" /></p>
         </div>
         <div className="bg-neutral-700/50 rounded-lg p-4 border border-neutral-600 flex flex-col justify-between">
-          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-2">Status</p>
+          <p className="text-xs text-neutral-400 uppercase tracking-wider mb-2"><EditableContent contentKey="deploy-content-manager-status" fallback="Status" /></p>
           {deployStatus === 'idle'    && <span className="text-sm text-neutral-400">Klar</span>}
           {deployStatus === 'loading' && <span className="flex items-center gap-2 text-sm text-yellow-400"><RefreshCw size={14} className="animate-spin" /> Deployer…</span>}
           {deployStatus === 'success' && <span className="flex items-center gap-2 text-sm text-green-400"><CheckCircle size={14} /> Gennemført</span>}
@@ -562,7 +563,7 @@ const DeployContentManager: React.FC = () => {
       </div>
 
       {contentCount === 0 && deployStatus !== 'loading' && (
-        <p className="text-center text-sm text-neutral-500">Ingen redigerbart indhold at deploye – databasen er ren.</p>
+        <p className="text-center text-sm text-neutral-500"><EditableContent contentKey="deploy-content-manager-ingen-redigerbart-indhold-at-deploye" fallback="Ingen redigerbart indhold at deploye – databasen er ren." /></p>
       )}
 
       {/* Hint */}
@@ -597,10 +598,10 @@ const DeployContentManager: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5">
             {[
-              { label: 'Deployed',      value: deployResult.deployedKeys.length,  color: 'text-green-400',  icon: CheckCircle },
-              { label: 'Sprunget over', value: deployResult.skippedKeys.length,   color: 'text-yellow-400', icon: SkipForward  },
-              { label: 'Filer ændret',  value: deployResult.modifiedFiles.length, color: 'text-blue-400',   icon: FileCode     },
-              { label: 'Netlify', value: deployResult.netlifyTriggered ? '✓' : '–', color: deployResult.netlifyTriggered ? 'text-green-400' : 'text-neutral-500', icon: Globe },
+              { label: () => Deployed,      value: deployResult.deployedKeys.length,  color: 'text-green-400',  icon: CheckCircle },
+              { label: () => Sprunget over, value: deployResult.skippedKeys.length,   color: 'text-yellow-400', icon: SkipForward  },
+              { label: () => Filer ændret,  value: deployResult.modifiedFiles.length, color: 'text-blue-400',   icon: FileCode     },
+              { label: () => Netlify, value: deployResult.netlifyTriggered ? '✓' : '–', color: deployResult.netlifyTriggered ? 'text-green-400' : 'text-neutral-500', icon: Globe },
             ].map(({ label, value, color, icon: Icon }) => (
               <div key={label} className="bg-neutral-800 rounded-lg p-3 text-center">
                 <Icon size={16} className={`${color} mx-auto mb-1`} />
@@ -622,7 +623,7 @@ const DeployContentManager: React.FC = () => {
             )}
             {deployResult.skippedKeys.length > 0 && (
               <Collapsible title={`Sprunget over (${deployResult.skippedKeys.length})`} color="yellow" open={!!expanded['skipped']} onToggle={() => toggle('skipped')}>
-                <p className="text-xs text-neutral-400 mb-2">Disse nøgler er i databasen men mangler i kildekoden som <code className="bg-neutral-800 px-1 rounded">fallback</code>.</p>
+                <p className="text-xs text-neutral-400 mb-2"><EditableContent contentKey="deploy-content-manager-disse-noegler-er-i-databasen" fallback="Disse nøgler er i databasen men mangler i kildekoden som" /> <code className="bg-neutral-800 px-1 rounded">fallback</code>.</p>
                 <TagList items={deployResult.skippedKeys} color="yellow" />
               </Collapsible>
             )}
