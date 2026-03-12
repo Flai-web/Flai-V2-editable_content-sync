@@ -175,7 +175,7 @@ const DonationsManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Minimumsbeløb (DKK)</label>
+            <label className="block text-sm font-medium mb-2"><EditableContent contentKey="donations-manager-minimumsbeloeb-dkk" fallback="Minimumsbeløb (DKK)" /></label>
             <input
               type="number"
               value={minAmount}

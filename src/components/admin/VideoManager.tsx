@@ -573,7 +573,7 @@ const UploadModal: React.FC<{ onClose: () => void; onCreated: (v: CldVideo) => v
           </button>
           <button onClick={handleUpload} disabled={isBusy || isDone || !videoTitle.trim() || !file}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {isBusy ? <Loader2 size={14} className="animate-spin" /> : isDone ? <CheckCircle size={14} /> : <Upload size={14} />}
+            {isBusy ? <Loader2 size={14} className="animate-spin" /> ': isDone ?' <CheckCircle size={14} /> : <Upload size={14} />}
             {isBusy
               ? <EditableContent contentKey="video-btn-uploading" as="span" fallback="Uploader…" />
               : isDone
@@ -680,7 +680,7 @@ const ReplaceVideoModal: React.FC<{
           <div className={`rounded-xl p-3 flex items-start gap-2 border ${hero ? 'bg-primary/10 border-primary/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
             <AlertCircle size={15} className={`shrink-0 mt-0.5 ${hero ? 'text-primary' : 'text-amber-400'}`} />
             <div className="text-xs space-y-1">
-              {hero && <p className="text-primary font-medium">Dette er hero-videoen</p>}
+              {hero && <p className="text-primary font-medium">'Dette er hero-videoen'</p>}
               <p className={hero ? 'text-primary/80' : 'text-amber-300'}>
                 Filen uploades til det samme Cloudinary ID{' '}
                 <code className="font-mono bg-black/20 px-1 rounded">{video.public_id}</code> — navn, URL og alle tildelinger forbliver uændrede.
@@ -707,7 +707,7 @@ const ReplaceVideoModal: React.FC<{
           {isDone && replacedId && (
             <div className="flex items-center gap-2 text-xs text-neutral-400">
               <EagerBadge publicId={replacedId} />
-              <span>HLS + MP4 + WebM forberedes på Cloudinary</span>
+              <span><EditableContent contentKey="video-manager-hls-mp4-webm-forberedes-paa-2" fallback="HLS + MP4 + WebM forberedes på Cloudinary" /></span>
             </div>
           )}
 
@@ -985,7 +985,7 @@ const VideoManager: React.FC = () => {
             <EditableContent contentKey="video-manager-count-label" as="span"
               fallback={videos.length !== 1 ? 'videoer i dit bibliotek' : 'video i dit bibliotek'} />
             <span className="inline-flex items-center gap-1 ml-1 text-xs px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
-              <Zap size={9} /> 'q_auto · sp_hd · HLS'
+              <Zap size={9} /> ''q_auto · sp_hd · HLS''
             </span>
           </p>
         </div>

@@ -1124,7 +1124,7 @@ const BookingsManager: React.FC = () => {
                     }}
                     className="mr-2"
                   />
-                  <span className="text-sm text-neutral-300">Inkluder Redigering (+100 kr hvis ikke inkluderet)</span>
+                  <span className="text-sm text-neutral-300"><EditableContent contentKey="bookings-manager-inkluder-redigering-100-kr-hvis" fallback="Inkluder Redigering (+100 kr hvis ikke inkluderet)" /></span>
                 </label>
 
                 <label className="flex items-center cursor-pointer">
@@ -1326,7 +1326,7 @@ const BookingsManager: React.FC = () => {
                         {booking.customer_name}
                       </p>
                       <p className="text-sm text-neutral-300">
-                        {booking.user_email || booking.guest_email || <span className="italic text-neutral-500">Ingen email</span>}
+                        {booking.user_email || booking.guest_email || <span className="italic text-neutral-500">'Ingen email'</span>}
                       </p>
                     </div>
                     <p className="text-xs text-neutral-500">Booking #{booking.id}</p>
@@ -1552,7 +1552,7 @@ const BookingsManager: React.FC = () => {
                   <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-600">
                     <div className="flex items-center mb-2">
                       <Info size={16} className="text-primary mr-2" />
-                      <h4 className="font-semibold text-white">Ekstra Information (Raw Data)</h4>
+                      <h4 className="font-semibold text-white"><EditableContent contentKey="bookings-manager-ekstra-information-raw-data" fallback="Ekstra Information (Raw Data)" /></h4>
                     </div>
                     {(!booking.extra_information || Object.keys(booking.extra_information).length === 0) ? (
                       <p className="text-neutral-400 text-sm italic"><EditableContent contentKey="bookings-manager-ingen-ekstra-information-fundet-for" fallback="Ingen ekstra information fundet for denne booking." /></p>
@@ -1859,7 +1859,7 @@ const BookingsManager: React.FC = () => {
                           onChange={(e) => setEditingData({ ...editingData, price: parseFloat(e.target.value) || 0 })}
                           className="form-input w-full"
                         />
-                        <span className="text-neutral-400">kr</span>
+                        <span className="text-neutral-400"><EditableContent contentKey="bookings-manager-kr" fallback="kr" /></span>
                       </div>
                       <p className="text-xs text-neutral-400 mt-1">
                         Prisen opdateres automatisk når du ændrer redigering
@@ -1913,7 +1913,7 @@ const BookingsManager: React.FC = () => {
                           className="mr-2"
                         />
                         <Cloud size={16} className="mr-1 text-green-400" />
-                        <span className="text-sm">Gofile Upload (Ubegrænset)</span>
+                        <span className="text-sm"><EditableContent contentKey="bookings-manager-gofile-upload-ubegraenset" fallback="Gofile Upload (Ubegrænset)" /></span>
                       </label>
                       <label className="flex items-center cursor-pointer">
                         <input
@@ -1925,7 +1925,7 @@ const BookingsManager: React.FC = () => {
                           className="mr-2"
                         />
                         <Upload size={16} className="mr-1" />
-                        <span className="text-sm">Upload fil (Max 50MB)</span>
+                        <span className="text-sm"><EditableContent contentKey="bookings-manager-upload-fil-max-50mb" fallback="Upload fil (Max 50MB)" /></span>
                       </label>
                       <label className="flex items-center cursor-pointer">
                         <input
@@ -1937,7 +1937,7 @@ const BookingsManager: React.FC = () => {
                           className="mr-2"
                         />
                         <LinkIcon size={16} className="mr-1" />
-                        <span className="text-sm">Brug link (Eksternt)</span>
+                        <span className="text-sm"><EditableContent contentKey="bookings-manager-brug-link-eksternt" fallback="Brug link (Eksternt)" /></span>
                       </label>
                     </div>
 

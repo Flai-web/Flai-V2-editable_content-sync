@@ -327,7 +327,7 @@ const UserRow: React.FC<{
         {/* Info */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate leading-tight">
-            {user.display_name || <span className="text-neutral-500">Intet navn</span>}
+            {user.display_name || <span className="text-neutral-500">'Intet navn'</span>}
           </p>
           <p className="text-xs text-neutral-400 truncate">{user.email}</p>
         </div>
@@ -342,7 +342,7 @@ const UserRow: React.FC<{
           )}
           {user.is_admin && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex items-center gap-1">
-              <Shield size={10} /> 'Admin'
+              <Shield size={10} /> ''Admin''
             </span>
           )}
           <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-700 text-neutral-300 flex items-center gap-1">
@@ -360,7 +360,7 @@ const UserRow: React.FC<{
                 : 'bg-neutral-700 hover:bg-neutral-600 text-neutral-300 hover:text-white'
             }`}
           >
-            <Eye size={12} /> 'Detaljer'
+            <Eye size={12} /> ''Detaljer''
           </button>
           <button
             onClick={handleSupportClick}

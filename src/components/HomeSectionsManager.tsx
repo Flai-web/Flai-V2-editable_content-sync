@@ -354,8 +354,8 @@ const HomeSectionsManager: React.FC = () => {
         )}
 
         <div className="text-sm text-neutral-400">
-          <p>• Maksimum 1 HTML fil (index.html påkrævet)</p>
-          <p>• Maksimum 4 andre filer (JS, TS, TSX, eller Python)</p>
+          <p><EditableContent contentKey="home-sections-manager-maksimum-1-html-fil-index" fallback="• Maksimum 1 HTML fil (index.html påkrævet)" /></p>
+          <p><EditableContent contentKey="home-sections-manager-maksimum-4-andre-filer-js" fallback="• Maksimum 4 andre filer (JS, TS, TSX, eller Python)" /></p>
         </div>
       </div>
     );

@@ -283,7 +283,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               <Upload size={18} />
               <span className="text-sm"><EditableContent contentKey="file-upload-klik-eller-traek-et-billede" fallback="Klik eller træk et billede hertil" /></span>
             </div>
-            <p className="text-xs text-neutral-500">JPG · PNG · WebP · AVIF · GIF — konverteres til WebP (100–500 KB)</p>
+            <p className="text-xs text-neutral-500"><EditableContent contentKey="file-upload-jpg-png-webp-avif-gif" fallback="JPG · PNG · WebP · AVIF · GIF — konverteres til WebP (100–500 KB)" /></p>
           </div>
         )}
       </div>
@@ -394,7 +394,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     onChange={e => setTargetKBInput(e.target.value)}
                     onBlur={commitTargetKB} onKeyDown={e => e.key === 'Enter' && commitTargetKB()}
                     className="flex-1 px-3 py-2 text-sm bg-neutral-700 border border-neutral-600 rounded-lg focus:outline-none focus:border-primary" />
-                  <span className="text-sm text-neutral-400 shrink-0">KB</span>
+                  <span className="text-sm text-neutral-400 shrink-0"><EditableContent contentKey="file-upload-kb" fallback="KB" /></span>
                 </div>
                 <div className="flex gap-2">
                   {[{ label: '100 KB', kb: 100 }, { label: '200 KB', kb: 200 },

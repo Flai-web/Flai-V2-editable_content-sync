@@ -778,8 +778,8 @@ const NewsletterManager: React.FC = () => {
                       </div>
                       
                       <div className="text-sm text-neutral-400 mb-3">
-                        <p><strong>Emne:</strong> {template.template_data.subject}</p>
-                        <p><strong>Oprettet:</strong> {new Date(template.created_at).toLocaleDateString('da-DK')}</p>
+                        <p><strong>'Emne:'</strong> {template.template_data.subject}</p>
+                        <p><strong>'Oprettet:'</strong> {new Date(template.created_at).toLocaleDateString('da-DK')}</p>
                       </div>
                       
                       {/* Mini Preview */}

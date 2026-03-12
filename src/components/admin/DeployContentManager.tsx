@@ -110,7 +110,7 @@ const AutoDeployCountdown: React.FC<{ onCancel: () => void }> = ({ onCancel }) =
     <div className="flex items-center gap-3 bg-yellow-900/30 border border-yellow-700/50 rounded-lg px-4 py-3">
       <Clock size={16} className="text-yellow-400 shrink-0 animate-pulse" />
       <div className="flex-1">
-        <p className="text-sm text-yellow-300 font-medium">Auto-deploy om <span className="font-mono font-bold">{formatMs(msLeft)}</span></p>
+        <p className="text-sm text-yellow-300 font-medium">'Auto-deploy om' <span className="font-mono font-bold">{formatMs(msLeft)}</span></p>
         <p className="text-xs text-yellow-500"><EditableContent contentKey="deploy-content-manager-hver-indholds-aendring-nulstiller-timeren" fallback="Hver indholds-ændring nulstiller timeren" /></p>
       </div>
       <button onClick={onCancel} className="p-1 rounded hover:bg-yellow-800/50 text-yellow-400 hover:text-yellow-200 transition-colors"><X size={14} /></button>
@@ -182,8 +182,8 @@ const UrlPickerModal: React.FC<{
 
         {/* Quick select */}
         <div className="px-5 pt-3 flex flex-wrap gap-2 shrink-0">
-          <button onClick={selectAll}  className="text-xs px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors">'Vælg alle'</button>
-          <button onClick={clearAll}   className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">'Fravælg alle'</button>
+          <button onClick={selectAll}  className="text-xs px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors">''Vælg alle''</button>
+          <button onClick={clearAll}   className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">''Fravælg alle''</button>
           {groups.map(g => (
             <button key={g} onClick={() => selectGroup(g)} className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">
               + {g}
@@ -252,7 +252,7 @@ const UrlPickerModal: React.FC<{
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors shrink-0
                   ${!customInput.trim() ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed' : 'bg-primary/20 hover:bg-primary/30 text-primary'}`}
               >
-                <Plus size={13} /> 'Tilføj'
+                <Plus size={13} /> ''Tilføj''
               </button>
             </div>
           </div>
@@ -260,7 +260,7 @@ const UrlPickerModal: React.FC<{
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-neutral-700 flex gap-3 shrink-0">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-medium transition-colors">'Annuller'</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-medium transition-colors">''Annuller''</button>
           <button
             disabled={selected.size === 0}
             onClick={() => onConfirm([...selected])}

@@ -267,7 +267,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               {uploading ? 'Komprimerer og uploader på serveren...' : 'Klik for at uploade billede eller video'}
             </p>
             <p className="text-xs text-neutral-500 mt-1"><EditableContent contentKey="image-upload-jpg-png-webp-avif-gif" fallback="JPG · PNG · WebP · AVIF · GIF op til 50 MB" /></p>
-            <p className="text-xs text-neutral-500">Konverteres automatisk til WebP (100–500 KB) på serveren</p>
+            <p className="text-xs text-neutral-500"><EditableContent contentKey="image-upload-konverteres-automatisk-til-webp-100" fallback="Konverteres automatisk til WebP (100–500 KB) på serveren" /></p>
             {uploading && <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mt-2" />}
           </label>
 
@@ -350,7 +350,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         onChange={e => setTargetKBInput(e.target.value)}
                         onBlur={commitTargetKB} onKeyDown={e => e.key === 'Enter' && commitTargetKB()}
                         className="flex-1 px-3 py-2 text-sm bg-neutral-700 border border-neutral-600 rounded-lg focus:outline-none focus:border-primary" />
-                      <span className="text-sm text-neutral-400 shrink-0">KB</span>
+                      <span className="text-sm text-neutral-400 shrink-0"><EditableContent contentKey="image-upload-kb" fallback="KB" /></span>
                     </div>
                     {/* Presets */}
                     <div className="flex gap-2">
