@@ -7,7 +7,6 @@ import {
 import { supabase } from '../../utils/supabase';
 import { getAutoDeployMsRemaining, cancelAutoDeploy } from '../../hooks/useSiteContent';
 import toast from 'react-hot-toast';
-import EditableContent from '../EditableContent';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface DeployResult {
@@ -39,33 +38,33 @@ type AddStatus    = 'idle' | 'scanning' | 'success' | 'error';
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 const ROUTES: Array<{ url: string; label: string; group: string }> = [
   // Sider
-  { url: '/',                label: () => <EditableContent contentKey="deploy-content-manager-forside" fallback="Forside" />,              group: 'Sider' },
-  { url: '/products',        label: () => <EditableContent contentKey="deploy-content-manager-produkter" fallback="Produkter" />,            group: 'Sider' },
-  { url: '/product/',        label: () => <EditableContent contentKey="deploy-content-manager-produkt-detalje" fallback="Produkt-detalje" />,      group: 'Sider' },
-  { url: '/portfolio',       label: () => <EditableContent contentKey="deploy-content-manager-portfolio" fallback="Portfolio" />,            group: 'Sider' },
-  { url: '/search',          label: () => <EditableContent contentKey="deploy-content-manager-soeg" fallback="Søg" />,                  group: 'Sider' },
-  { url: '/coverage',        label: () => <EditableContent contentKey="deploy-content-manager-daekningsomraader" fallback="Dækningsområder" />,      group: 'Sider' },
-  { url: '/simple-request',  label: () => <EditableContent contentKey="deploy-content-manager-simpel-forespoergsel" fallback="Simpel forespørgsel" />,  group: 'Sider' },
-  { url: '/booking/',        label: () => <EditableContent contentKey="deploy-content-manager-booking" fallback="Booking" />,              group: 'Sider' },
-  { url: '/booking-success', label: () => <EditableContent contentKey="deploy-content-manager-booking-bekraeftelse" fallback="Booking-bekræftelse" />,  group: 'Sider' },
-  { url: '/payment',         label: () => <EditableContent contentKey="deploy-content-manager-betaling" fallback="Betaling" />,             group: 'Sider' },
-  { url: '/donate/',         label: () => <EditableContent contentKey="deploy-content-manager-donation" fallback="Donation" />,             group: 'Sider' },
-  { url: '/ratings',         label: () => <EditableContent contentKey="deploy-content-manager-anmeldelser" fallback="Anmeldelser" />,          group: 'Sider' },
-  { url: '/rate-booking/',   label: () => <EditableContent contentKey="deploy-content-manager-bedoem-booking" fallback="Bedøm booking" />,        group: 'Sider' },
-  { url: '/unsubscribe',     label: () => <EditableContent contentKey="deploy-content-manager-afmeld-nyhedsbrev" fallback="Afmeld nyhedsbrev" />,    group: 'Sider' },
-  { url: '/file/gofile/',    label: () => <EditableContent contentKey="deploy-content-manager-fil-download" fallback="Fil-download" />,         group: 'Sider' },
+  { url: '/',                label: 'Forside',              group: 'Sider' },
+  { url: '/products',        label: 'Produkter',            group: 'Sider' },
+  { url: '/product/',        label: 'Produkt-detalje',      group: 'Sider' },
+  { url: '/portfolio',       label: 'Portfolio',            group: 'Sider' },
+  { url: '/search',          label: 'Søg',                  group: 'Sider' },
+  { url: '/coverage',        label: 'Dækningsområder',      group: 'Sider' },
+  { url: '/simple-request',  label: 'Simpel forespørgsel',  group: 'Sider' },
+  { url: '/booking/',        label: 'Booking',              group: 'Sider' },
+  { url: '/booking-success', label: 'Booking-bekræftelse',  group: 'Sider' },
+  { url: '/payment',         label: 'Betaling',             group: 'Sider' },
+  { url: '/donate/',         label: 'Donation',             group: 'Sider' },
+  { url: '/ratings',         label: 'Anmeldelser',          group: 'Sider' },
+  { url: '/rate-booking/',   label: 'Bedøm booking',        group: 'Sider' },
+  { url: '/unsubscribe',     label: 'Afmeld nyhedsbrev',    group: 'Sider' },
+  { url: '/file/gofile/',    label: 'Fil-download',         group: 'Sider' },
   // Indhold
-  { url: '/terms',           label: () => <EditableContent contentKey="deploy-content-manager-vilkaar" fallback="Vilkår" />,               group: 'Indhold' },
-  { url: '/policies',        label: () => <EditableContent contentKey="deploy-content-manager-privatpolitik" fallback="Privatpolitik" />,        group: 'Indhold' },
+  { url: '/terms',           label: 'Vilkår',               group: 'Indhold' },
+  { url: '/policies',        label: 'Privatpolitik',        group: 'Indhold' },
   // Konto
-  { url: '/auth',            label: () => <EditableContent contentKey="deploy-content-manager-login-opret-konto" fallback="Login / Opret konto" />,  group: 'Konto' },
-  { url: '/profile',         label: () => <EditableContent contentKey="deploy-content-manager-profil" fallback="Profil" />,               group: 'Konto' },
-  { url: '/buy-credits',     label: () => <EditableContent contentKey="deploy-content-manager-koeb-credits" fallback="Køb credits" />,          group: 'Konto' },
-  { url: '/reset-password',  label: () => <EditableContent contentKey="deploy-content-manager-nulstil-adgangskode" fallback="Nulstil adgangskode" />,  group: 'Konto' },
-  { url: '/update-password', label: () => <EditableContent contentKey="deploy-content-manager-opdater-adgangskode" fallback="Opdater adgangskode" />,  group: 'Konto' },
-  { url: '/email-confirmed', label: () => <EditableContent contentKey="deploy-content-manager-email-bekraeftet" fallback="Email bekræftet" />,      group: 'Konto' },
+  { url: '/auth',            label: 'Login / Opret konto',  group: 'Konto' },
+  { url: '/profile',         label: 'Profil',               group: 'Konto' },
+  { url: '/buy-credits',     label: 'Køb credits',          group: 'Konto' },
+  { url: '/reset-password',  label: 'Nulstil adgangskode',  group: 'Konto' },
+  { url: '/update-password', label: 'Opdater adgangskode',  group: 'Konto' },
+  { url: '/email-confirmed', label: 'Email bekræftet',      group: 'Konto' },
   // Admin
-  { url: '/admin',           label: () => <EditableContent contentKey="deploy-content-manager-admin" fallback="Admin" />,                group: 'Admin' },
+  { url: '/admin',           label: 'Admin',                group: 'Admin' },
 ];
 
 function formatMs(ms: number): string {
@@ -156,8 +155,8 @@ const UrlPickerModal: React.FC<{
           <Info size={15} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-300">
             For hver URL scannes sidens fil <span className="text-blue-200 font-medium">og alle importerede komponenter</span> rekursivt.
-            Konverterer automatisk: bare JSX-tekst, <code className="bg-neutral-800 px-1 rounded">{'<EditableContent contentKey="deploy-content-manager-streng" fallback="streng" />'}</code>,{' '}
-            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald, og <code className="bg-neutral-800 px-1 rounded">label: () => <EditableContent contentKey="deploy-content-manager-tekst" fallback="Tekst" /></code> i objekt-arrays (faner, menuer m.m.).
+            Konverterer automatisk: bare JSX-tekst, <code className="bg-neutral-800 px-1 rounded">{'{"streng"}'}</code>,{' '}
+            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald, og <code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> i objekt-arrays (faner, menuer m.m.).
             NavBar og Footer inkluderes altid automatisk.
           </p>
         </div>
@@ -189,7 +188,7 @@ const UrlPickerModal: React.FC<{
                       className="rounded accent-primary shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white font-medium group-hover:text-primary transition-colors">{route.label()}</p>
+                      <p className="text-sm text-white font-medium group-hover:text-primary transition-colors">{route.label}</p>
                       <p className="text-xs font-mono text-neutral-500">{route.url}</p>
                     </div>
                     <Layout size={13} className="text-neutral-600 group-hover:text-neutral-400 shrink-0" />
@@ -330,17 +329,17 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 const colorMap = {
-  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: () => <EditableContent contentKey="deploy-content-manager-text-green-400" fallback="text-green-400" />,  badge: 'bg-green-900/40 text-green-300'  },
-  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: () => <EditableContent contentKey="deploy-content-manager-text-blue-400" fallback="text-blue-400" />,   badge: 'bg-blue-900/40 text-blue-300'    },
-  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: () => <EditableContent contentKey="deploy-content-manager-text-yellow-400" fallback="text-yellow-400" />, badge: 'bg-yellow-900/40 text-yellow-300' },
-  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: () => <EditableContent contentKey="deploy-content-manager-text-red-400" fallback="text-red-400" />,    badge: 'bg-red-900/40 text-red-300'      },
+  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: 'text-green-400',  badge: 'bg-green-900/40 text-green-300'  },
+  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: 'text-blue-400',   badge: 'bg-blue-900/40 text-blue-300'    },
+  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: 'text-yellow-400', badge: 'bg-yellow-900/40 text-yellow-300' },
+  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: 'text-red-400',    badge: 'bg-red-900/40 text-red-300'      },
 };
 
 const Collapsible: React.FC<{ title: string; color: keyof typeof colorMap; open: boolean; onToggle: () => void; children: React.ReactNode }> = ({ title, color, open, onToggle, children }) => {
   const c = colorMap[color];
   return (
     <div className={`rounded-lg border ${c.border} overflow-hidden`}>
-      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text()} hover:brightness-110 transition-all`}>
+      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text} hover:brightness-110 transition-all`}>
         <span>{title}</span><span className="text-xs opacity-60">{open ? '▲' : '▼'}</span>
       </button>
       {open && <div className="px-4 py-3 bg-neutral-800/50">{children}</div>}
@@ -556,10 +555,10 @@ const DeployContentManager: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5">
             {[
-              { label: () => <EditableContent contentKey="deploy-content-manager-deployed" fallback="Deployed" />,      value: deployResult.deployedKeys.length,  color: 'text-green-400',  icon: CheckCircle },
-              { label: () => <EditableContent contentKey="deploy-content-manager-sprunget-over" fallback="Sprunget over" />, value: deployResult.skippedKeys.length,   color: 'text-yellow-400', icon: SkipForward  },
-              { label: () => <EditableContent contentKey="deploy-content-manager-filer-aendret" fallback="Filer ændret" />,  value: deployResult.modifiedFiles.length, color: 'text-blue-400',   icon: FileCode     },
-              { label: () => <EditableContent contentKey="deploy-content-manager-netlify" fallback="Netlify" />, value: deployResult.netlifyTriggered ? '✓' : '–', color: deployResult.netlifyTriggered ? 'text-green-400' : 'text-neutral-500', icon: Globe },
+              { label: 'Deployed',      value: deployResult.deployedKeys.length,  color: 'text-green-400',  icon: CheckCircle },
+              { label: 'Sprunget over', value: deployResult.skippedKeys.length,   color: 'text-yellow-400', icon: SkipForward  },
+              { label: 'Filer ændret',  value: deployResult.modifiedFiles.length, color: 'text-blue-400',   icon: FileCode     },
+              { label: 'Netlify', value: deployResult.netlifyTriggered ? '✓' : '–', color: deployResult.netlifyTriggered ? 'text-green-400' : 'text-neutral-500', icon: Globe },
             ].map(({ label, value, color, icon: Icon }) => (
               <div key={label} className="bg-neutral-800 rounded-lg p-3 text-center">
                 <Icon size={16} className={`${color} mx-auto mb-1`} />
