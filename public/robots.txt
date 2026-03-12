@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Block admin and private routes
+Disallow: /admin
+Disallow: /admin/
+Disallow: /profile
+Disallow: /profile/
+Disallow: /buy-credits
+Disallow: /rate-booking/
+Disallow: /update-password
+Disallow: /reset-password
+Disallow: /email-confirmed
+Disallow: /unsubscribe
+
+Sitemap: https://flai.dk/sitemap.xml

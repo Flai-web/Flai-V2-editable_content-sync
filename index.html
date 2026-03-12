@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo2.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <!-- ═══════════════════════════════════════════════════════
+         PRIMARY SEO
+    ═══════════════════════════════════════════════════════ -->
+    <title>Flai - Drone service - En ny verden</title>
+    <meta name="description" content="Flai - Droneservice i Danmark. Luftfoto og luftvideo til ejendomme, events og erhverv. Book online." />
+    <meta name="keywords" content="droneservice Danmark, luftfoto, luftvideo, dronefoto, drone booking" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://flai.dk/" />
+
+    <!-- ═══════════════════════════════════════════════════════
+         OPEN GRAPH (Facebook, LinkedIn, WhatsApp)
+    ═══════════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Flai" />
+    <meta property="og:url" content="https://flai.dk/" />
+    <meta property="og:title" content="Flai - Drone service - En ny verden" />
+    <meta property="og:description" content="Droneservice i Danmark. Luftfoto og luftvideo til ejendomme, events og erhverv. Book online." />
+    <meta property="og:image" content="https://flai.dk/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="da_DK" />
+
+    <!-- ═══════════════════════════════════════════════════════
+         TWITTER / X CARD
+    ═══════════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Flai - Drone service - En ny verden" />
+    <meta name="twitter:description" content="Droneservice i Danmark. Luftfoto og luftvideo til ejendomme, events og erhverv. Book online." />
+    <meta name="twitter:image" content="https://flai.dk/og-image.jpg" />
+
+    <!--
+      Cloudinary preconnect + hero poster preload are intentionally NOT here.
+      They are injected by heroPreload.ts which is only imported on the homepage,
+      so other routes are never penalised with unnecessary preconnects.
+    -->
+
+    <!-- Preconnect to Supabase (correct project URL) -->
+    <link rel="preconnect" href="https://pbqeljimuerxatrtmgsn.supabase.co" crossorigin="anonymous" />
+
+    <!-- Fonts: system-UI stack — zero network round-trip, zero layout shift.
+         Inter is the default system font on many platforms; visually identical
+         fallbacks on others. Eliminates Google Fonts DNS + render-blocking load. -->
+    <style>
+      body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+
+    <!--
+      INSTANT DARK BACKGROUND — inline style so the very first painted pixel
+      is dark (#171717 = neutral-900), matching the app shell exactly.
+      Without this the browser paints white for ~100ms before React mounts,
+      causing a visible white flash even when JS loads quickly.
+    -->
+    <style>
+      html, body, #root {
+        background-color: #171717;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
