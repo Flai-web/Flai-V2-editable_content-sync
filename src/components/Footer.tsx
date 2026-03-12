@@ -103,7 +103,7 @@ const Footer: React.FC = () => {
               <li className="flex items-center group">
                 <Mail size={18} className="mr-2 flex-shrink-0" />
                 <a href={`mailto:${getContent('contact-email', "fb@flai.dk")}`} className="hover:text-white transition-colors break-all">
-                  {getContent('contact-email', "fb@flai.dk")}
+                  <EditableContent contentKey="contact-email" fallback="fb@flai.dk" />
                 </a>
               </li>
               <li className="flex items-center group">
@@ -156,8 +156,8 @@ const Footer: React.FC = () => {
                 <button type="submit" disabled={isSubmitting}
                   className="w-full px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                   {isSubmitting
-                    ? <><Loader2 size={18} className="animate-spin mr-2" />{getContent('footer-form-sending', 'Sender...')}</>
-                    : <><Send size={18} className="mr-2" />{getContent('footer-form-submit', 'Send besked')}</>}
+                    ? <><Loader2 size={18} className="animate-spin mr-2" /><EditableContent contentKey="footer-form-sending" fallback="Sender..." /></>
+                    : <><Send size={18} className="mr-2" /><EditableContent contentKey="footer-form-submit" fallback="Send besked" /></>}
                 </button>
                 {error && <p className="text-error text-sm">{error}</p>}
               </form>
