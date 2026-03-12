@@ -249,6 +249,7 @@ const PortfolioManager: React.FC = () => {
 
   // ─── Upload callbacks ─────────────────────────────────────────────────────────
 
+  // ImageUpload calls onImageUploaded once per file (single or each of multi-upload)
   const handleNewBundleImageUploaded = (url: string) => {
     if (!url) return;
     setNewBundle(prev => ({
@@ -354,43 +355,6 @@ const PortfolioManager: React.FC = () => {
 
   const unbundledImages = portfolioImages.filter(img => !img.bundle_id);
 
-  // Stats: label is always () => React.ReactElement so the .map() call is uniform.
-  // key uses a stable id string, never the result of label().
-  const stats: {
-    id: string;
-    label: () => React.ReactElement;
-    value: number;
-    icon: React.ReactElement;
-    cls?: string;
-  }[] = [
-    {
-      id: 'total-billeder',
-      label: () => <EditableContent contentKey="portfolio-manager-total-billeder" fallback="Total Billeder" />,
-      value: portfolioImages.length,
-      icon: <ImageIcon className="text-primary" size={20} />,
-    },
-    {
-      id: 'bundles',
-      label: () => <>Bundles</>,
-      value: bundles.length,
-      icon: <Package className="text-primary" size={20} />,
-    },
-    {
-      id: 'total-likes',
-      label: () => <>Total Likes</>,
-      value: portfolioImages.reduce((s, i) => s + i.likes, 0),
-      icon: <ThumbsUp className="text-success" size={20} />,
-      cls: 'text-success',
-    },
-    {
-      id: 'total-dislikes',
-      label: () => <>Total Dislikes</>,
-      value: portfolioImages.reduce((s, i) => s + i.dislikes, 0),
-      icon: <ThumbsDown className="text-error" size={20} />,
-      cls: 'text-error',
-    },
-  ];
-
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -419,12 +383,17 @@ const PortfolioManager: React.FC = () => {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {stats.map(stat => (
-          <div key={stat.id} className="bg-neutral-700/20 rounded-lg p-4">
+        {[
+          { label: 'Total Billeder', value: portfolioImages.length, icon: <ImageIcon className="text-primary" size={20} /> },
+          { label: 'Bundles', value: bundles.length, icon: <Package className="text-primary" size={20} /> },
+          { label: 'Total Likes', value: portfolioImages.reduce((s, i) => s + i.likes, 0), icon: <ThumbsUp className="text-success" size={20} />, cls: 'text-success' },
+          { label: 'Total Dislikes', value: portfolioImages.reduce((s, i) => s + i.dislikes, 0), icon: <ThumbsDown className="text-error" size={20} />, cls: 'text-error' },
+        ].map(stat => (
+          <div key={stat.label} className="bg-neutral-700/20 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-neutral-400 text-sm">{stat.label()}</p>
-                <p className={`text-xl font-bold ${stat.cls ?? ''}`}>{stat.value}</p>
+                <p className="text-neutral-400 text-sm">{stat.label}</p>
+                <p className={`text-xl font-bold ${'cls' in stat ? stat.cls : ''}`}>{stat.value}</p>
               </div>
               {stat.icon}
             </div>
@@ -435,9 +404,9 @@ const PortfolioManager: React.FC = () => {
       {/* ── Create Bundle Form ─────────────────────────────────────────────── */}
       {showBundleForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4">
-          <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-opret-ny-bundle" fallback="Opret Ny Bundle" /></h3>
+          <h3 className="text-xl font-semibold">Opret Ny Bundle</h3>
           <div>
-            <label className="form-label"><EditableContent contentKey="portfolio-manager-bundle-navn" fallback="Bundle Navn" /></label>
+            <label className="form-label">Bundle Navn</label>
             <input
               type="text"
               value={newBundle.name}
@@ -447,7 +416,7 @@ const PortfolioManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="form-label"><EditableContent contentKey="portfolio-manager-tilfoej-billeder" fallback="Tilføj Billeder" /></label>
+            <label className="form-label">Tilføj Billeder</label>
             <ImageUpload
               onImageUploaded={handleNewBundleImageUploaded}
               bucket="portfolio"
@@ -472,7 +441,7 @@ const PortfolioManager: React.FC = () => {
       {/* ── Group Existing Images Form ─────────────────────────────────────── */}
       {showGroupForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4">
-          <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-grupp-r-eksisterende-billeder" fallback="Gruppér Eksisterende Billeder" /></h3>
+          <h3 className="text-xl font-semibold">Gruppér Eksisterende Billeder</h3>
           <div>
             <label className="form-label">Bundle Navn</label>
             <input
@@ -504,7 +473,7 @@ const PortfolioManager: React.FC = () => {
               ))}
             </div>
             {unbundledImages.length === 0 && (
-              <p className="text-neutral-400 text-sm mt-2"><EditableContent contentKey="portfolio-manager-ingen-ubundlede-billeder-tilgaengelige" fallback="Ingen ubundlede billeder tilgængelige" /></p>
+              <p className="text-neutral-400 text-sm mt-2">Ingen ubundlede billeder tilgængelige</p>
             )}
           </div>
           <div className="flex justify-end space-x-3">
@@ -525,13 +494,13 @@ const PortfolioManager: React.FC = () => {
       {addToBundleId && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4 border-2 border-primary/30">
           <div>
-            <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-tilfoej-billeder-til-bundle" fallback="Tilføj billeder til bundle" /></h3>
+            <h3 className="text-xl font-semibold">Tilføj billeder til bundle</h3>
             <p className="text-neutral-400 text-sm mt-1">
               {bundles.find(b => b.id === addToBundleId)?.name}
             </p>
           </div>
           <div>
-            <label className="form-label"><EditableContent contentKey="portfolio-manager-upload-billeder" fallback="Upload Billeder" /></label>
+            <label className="form-label">Upload Billeder</label>
             <ImageUpload
               onImageUploaded={handleAddToBundleImageUploaded}
               bucket="portfolio"
@@ -556,9 +525,9 @@ const PortfolioManager: React.FC = () => {
       {/* ── Add Single Image Form ──────────────────────────────────────────── */}
       {showAddForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6 space-y-4">
-          <h3 className="text-xl font-semibold"><EditableContent contentKey="portfolio-manager-tilfoej-nyt-portfolio-billede" fallback="Tilføj Nyt Portfolio Billede" /></h3>
+          <h3 className="text-xl font-semibold">Tilføj Nyt Portfolio Billede</h3>
           <div>
-            <label className="form-label"><EditableContent contentKey="portfolio-manager-titel" fallback="Titel" /></label>
+            <label className="form-label">Titel</label>
             <input
               type="text"
               value={newImage.title}
@@ -568,7 +537,7 @@ const PortfolioManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="form-label"><EditableContent contentKey="portfolio-manager-billede-eller-video" fallback="Billede eller Video" /></label>
+            <label className="form-label">Billede eller Video</label>
             <ImageUpload
               onImageUploaded={(url) => setNewImage(prev => ({ ...prev, image_url: url }))}
               currentImageUrl={newImage.image_url || null}
@@ -808,7 +777,7 @@ const PortfolioManager: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="form-label"><EditableContent contentKey="portfolio-manager-billede" fallback="Billede" /></label>
+                        <label className="form-label">Billede</label>
                         <ImageUpload
                           onImageUploaded={(url) => setEditingImage({ ...editingImage, image_url: url })}
                           currentImageUrl={editingImage.image_url}
@@ -861,7 +830,7 @@ const PortfolioManager: React.FC = () => {
       {portfolioImages.length === 0 && (
         <div className="text-center py-12 text-neutral-400">
           <ImageIcon size={48} className="mx-auto mb-4 opacity-50" />
-          <p><EditableContent contentKey="portfolio-manager-ingen-portfolio-billeder-fundet-tilfoej" fallback="Ingen portfolio billeder fundet. Tilføj det første billede for at komme i gang." /></p>
+          <p>Ingen portfolio billeder fundet. Tilføj det første billede for at komme i gang.</p>
         </div>
       )}
     </div>
