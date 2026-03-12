@@ -74,13 +74,11 @@ const AdminPage: React.FC = () => {
     isAddressZonesLoaded,
   } = useData();
 
-  // Derive active tab from URL param; fall back to default for unknown sections
   const activeTab: TabId =
     section && VALID_SECTIONS.has(section as TabId)
       ? (section as TabId)
       : DEFAULT_TAB;
 
-  // Redirect /admin to /admin/bookings so the URL is always canonical
   useEffect(() => {
     if (!section) {
       navigate(`/admin/${DEFAULT_TAB}`, { replace: true });
@@ -89,7 +87,6 @@ const AdminPage: React.FC = () => {
     }
   }, [section, navigate]);
 
-  // Ensure all admin data is loaded when this page mounts.
   useEffect(() => {
     if (!isAdmin) return;
     if (!isProductsLoaded) refreshProducts();
@@ -105,8 +102,6 @@ const AdminPage: React.FC = () => {
   console.log('AdminPage: Rendering with isAdmin:', isAdmin);
   console.log('AdminPage: Data loaded - bookings:', bookings.length, 'products:', products.length);
 
-  // Wait for Supabase session resolution AND profile DB fetch before making
-  // any access decisions — prevents a flash of "Access Denied" for real admins.
   if (loading || profileLoading) {
     return (
       <div className="pt-24 pb-16 min-h-screen flex items-center justify-center">
@@ -127,7 +122,7 @@ const AdminPage: React.FC = () => {
               contentKey="admin-access-denied-title"
               as="h1"
               className="text-2xl font-bold mb-4"
-              fallback="Adgang NÃÂÃÂÃÂÃÂ¦gtet"
+              fallback="Adgang nægtet"
             />
             <EditableContent
               contentKey="admin-access-denied-message"
@@ -141,20 +136,22 @@ const AdminPage: React.FC = () => {
     );
   }
 
-  const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
-    { id: 'bookings',        label: () => <EditableContent contentKey="admin-page-bookinger" fallback="Bookinger" />,              icon: Calendar  },
+  // label is () => React.ReactElement so it can render <EditableContent />.
+  // The key MUST use tab.id (a stable string), never tab.label() (a component).
+  const tabs: { id: TabId; label: () => React.ReactElement; icon: React.ElementType }[] = [
+    { id: 'bookings',        label: () => <EditableContent contentKey="admin-page-bookinger" fallback="Bookinger" />,                          icon: Calendar  },
     { id: 'booking-config',  label: () => <EditableContent contentKey="admin-page-ugentlige-tilgaengligheder" fallback="Ugentlige tilgængligheder" />, icon: Clock     },
-    { id: 'products',        label: () => <EditableContent contentKey="admin-page-produkter" fallback="Produkter" />,              icon: Package   },
-    { id: 'portfolio',       label: () => <EditableContent contentKey="admin-page-portfolio" fallback="Portfolio" />,              icon: Image     },
-    { id: 'external-images', label: () => <EditableContent contentKey="admin-page-eksterne-billeder" fallback="Eksterne Billeder" />,      icon: FileImage },
-    { id: 'zones',           label: () => <EditableContent contentKey="admin-page-adressezoner" fallback="Adressezoner" />,           icon: MapPin    },
-    { id: 'discounts',       label: () => <EditableContent contentKey="admin-page-rabatkoder" fallback="Rabatkoder" />,             icon: Tag       },
-    { id: 'donations',       label: () => <EditableContent contentKey="admin-page-donationer" fallback="Donationer" />,             icon: Heart     },
-    { id: 'newsletter',      label: () => <EditableContent contentKey="admin-page-nyhedsbreve" fallback="Nyhedsbreve" />,            icon: Mail      },
-    { id: 'video',           label: () => <EditableContent contentKey="admin-page-videoer" fallback="Videoer" />,                icon: Video     },
-    { id: 'home-sections',   label: () => <EditableContent contentKey="admin-page-forside-sektioner" fallback="Forside Sektioner" />,      icon: Home      },
-    { id: 'users',           label: () => <EditableContent contentKey="admin-page-brugere" fallback="Brugere" />,                icon: Users     },
-    { id: 'deploy',          label: () => <EditableContent contentKey="admin-page-deploy-til-github" fallback="Deploy til GitHub" />,      icon: GitBranch },
+    { id: 'products',        label: () => <EditableContent contentKey="admin-page-produkter" fallback="Produkter" />,                          icon: Package   },
+    { id: 'portfolio',       label: () => <EditableContent contentKey="admin-page-portfolio" fallback="Portfolio" />,                          icon: Image     },
+    { id: 'external-images', label: () => <EditableContent contentKey="admin-page-eksterne-billeder" fallback="Eksterne Billeder" />,          icon: FileImage },
+    { id: 'zones',           label: () => <EditableContent contentKey="admin-page-adressezoner" fallback="Adressezoner" />,                    icon: MapPin    },
+    { id: 'discounts',       label: () => <EditableContent contentKey="admin-page-rabatkoder" fallback="Rabatkoder" />,                        icon: Tag       },
+    { id: 'donations',       label: () => <EditableContent contentKey="admin-page-donationer" fallback="Donationer" />,                        icon: Heart     },
+    { id: 'newsletter',      label: () => <EditableContent contentKey="admin-page-nyhedsbreve" fallback="Nyhedsbreve" />,                      icon: Mail      },
+    { id: 'video',           label: () => <EditableContent contentKey="admin-page-videoer" fallback="Videoer" />,                              icon: Video     },
+    { id: 'home-sections',   label: () => <EditableContent contentKey="admin-page-forside-sektioner" fallback="Forside Sektioner" />,          icon: Home      },
+    { id: 'users',           label: () => <EditableContent contentKey="admin-page-brugere" fallback="Brugere" />,                              icon: Users     },
+    { id: 'deploy',          label: () => <EditableContent contentKey="admin-page-deploy-til-github" fallback="Deploy til GitHub" />,          icon: GitBranch },
   ];
 
   const renderTabContent = () => {
