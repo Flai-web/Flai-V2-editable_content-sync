@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Search, Package, Image, FileText, ArrowRight, Filter, X, ChevronDown, SortAsc, RefreshCw, Calendar } from 'lucide-react';
 import { useSearch, getHighlight, type SearchFilters, type ProductResult, type PortfolioResult, type PageResult } from '../hooks/useSearch';
 import ProductCard, { ProductCardSkeleton } from '../components/ProductCard';
+import EditableContent from '../components/EditableContent';
 
 // ─── Highlight renderer — uses Meilisearch <mark> tags ────────────────────────
 
@@ -107,7 +108,7 @@ const SearchPage: React.FC = () => {
       <div className="container">
         <div className="max-w-5xl mx-auto">
 
-          <h1 className="text-3xl font-bold mb-5">Søg på siden</h1>
+          <h1 className="text-3xl font-bold mb-5"><EditableContent contentKey="search-page-soeg-paa-siden" fallback="Søg på siden" /></h1>
 
           {/* Search bar */}
           <div className="relative max-w-2xl mb-4">
@@ -131,8 +132,7 @@ const SearchPage: React.FC = () => {
                 )}
                 <button type="submit"
                   className="absolute right-2 px-4 py-1.5 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg transition-colors font-medium">
-                  Søg
-                </button>
+                  <EditableContent contentKey="search-page-soeg" fallback="Søg" /></button>
               </div>
             </form>
 
@@ -161,7 +161,7 @@ const SearchPage: React.FC = () => {
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    <span className="text-white font-medium">{total}</span> resultater for{' '}
+                    <span className="text-white font-medium">{total}</span> <EditableContent contentKey="search-page-resultater-for" fallback="resultater for" />{' '}
                     <span className="text-primary font-medium">"{query}"</span>
                     {(loading || syncing) && <span className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin inline-block" />}
                   </span>
@@ -172,15 +172,13 @@ const SearchPage: React.FC = () => {
                 {hasFilters && (
                   <button onClick={() => { setCategory(''); setSortBy(''); }}
                     className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors">
-                    <X size={12} /> Ryd filtre
-                  </button>
+                    <X size={12} /> <EditableContent contentKey="search-page-ryd-filtre" fallback="Ryd filtre" /></button>
                 )}
                 <button onClick={() => setShowFilters(v => !v)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
                     hasFilters ? 'border-primary bg-primary/10 text-primary' : 'border-neutral-700 text-neutral-400 hover:text-white'
                   }`}>
-                  <Filter size={13} /> Filtre
-                  {hasFilters && <span className="px-1.5 py-0.5 bg-primary text-white text-xs rounded-full">{[category, sortBy].filter(Boolean).length}</span>}
+                  <Filter size={13} /> <EditableContent contentKey="search-page-filtre" fallback="Filtre" />{hasFilters && <span className="px-1.5 py-0.5 bg-primary text-white text-xs rounded-full">{[category, sortBy].filter(Boolean).length}</span>}
                   <ChevronDown size={13} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                 </button>
               </div>
@@ -190,20 +188,18 @@ const SearchPage: React.FC = () => {
           {syncing && (
             <div className="flex items-center gap-2 text-xs text-neutral-500 mb-4">
               <RefreshCw size={11} className="animate-spin" />
-              Synkroniserer søgedata — viser foreløbige resultater...
-            </div>
+              <EditableContent contentKey="search-page-synkroniserer-soegedata-viser-foreloebige-resultater" fallback="Synkroniserer søgedata — viser foreløbige resultater..." /></div>
           )}
 
           {/* Filters */}
           {showFilters && query && (
             <div className="mb-4 p-4 bg-neutral-800/60 border border-neutral-700 rounded-xl flex flex-wrap gap-6">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-neutral-400 font-medium uppercase tracking-wide">Kategori</label>
+                <label className="text-xs text-neutral-400 font-medium uppercase tracking-wide"><EditableContent contentKey="search-page-kategori" fallback="Kategori" /></label>
                 <div className="flex gap-2 flex-wrap">
                   <button onClick={() => setCategory('')}
                     className={`px-3 py-1 rounded-lg text-sm border transition-colors ${!category ? 'border-primary bg-primary/20 text-primary' : 'border-neutral-600 text-neutral-400 hover:border-neutral-500'}`}>
-                    Alle
-                  </button>
+                    <EditableContent contentKey="search-page-alle" fallback="Alle" /></button>
                   {productFacets && Object.entries(productFacets).map(([cat, count]) => (
                     <button key={cat} onClick={() => setCategory(category === cat ? '' : cat)}
                       className={`px-3 py-1 rounded-lg text-sm border transition-colors ${category === cat ? 'border-primary bg-primary/20 text-primary' : 'border-neutral-600 text-neutral-400 hover:border-neutral-500'}`}>
@@ -213,16 +209,15 @@ const SearchPage: React.FC = () => {
                   ))}
                   {!productFacets && (
                     <>
-                      <button onClick={() => setCategory('photo')} className={`px-3 py-1 rounded-lg text-sm border transition-colors ${category === 'photo' ? 'border-primary bg-primary/20 text-primary' : 'border-neutral-600 text-neutral-400 hover:border-neutral-500'}`}>Foto</button>
-                      <button onClick={() => setCategory('video')} className={`px-3 py-1 rounded-lg text-sm border transition-colors ${category === 'video' ? 'border-primary bg-primary/20 text-primary' : 'border-neutral-600 text-neutral-400 hover:border-neutral-500'}`}>Video</button>
+                      <button onClick={() => setCategory('photo')} className={`px-3 py-1 rounded-lg text-sm border transition-colors ${category === 'photo' ? 'border-primary bg-primary/20 text-primary' : 'border-neutral-600 text-neutral-400 hover:border-neutral-500'}`}><EditableContent contentKey="search-page-foto" fallback="Foto" /></button>
+                      <button onClick={() => setCategory('video')} className={`px-3 py-1 rounded-lg text-sm border transition-colors ${category === 'video' ? 'border-primary bg-primary/20 text-primary' : 'border-neutral-600 text-neutral-400 hover:border-neutral-500'}`}><EditableContent contentKey="search-page-video" fallback="Video" /></button>
                     </>
                   )}
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-neutral-400 font-medium uppercase tracking-wide flex items-center gap-1">
-                  <SortAsc size={11} /> Sortering
-                </label>
+                  <SortAsc size={11} /> <EditableContent contentKey="search-page-sortering" fallback="Sortering" /></label>
                 <div className="flex gap-2 flex-wrap">
                   {([['', 'Relevans'], ['price_asc', 'Pris ↓'], ['price_desc', 'Pris ↑'], ['name_asc', 'Navn A–Ø']] as [string, string][]).map(([val, label]) => (
                     <button key={val} onClick={() => setSortBy(val as SearchFilters['sortBy'])}
@@ -262,8 +257,8 @@ const SearchPage: React.FC = () => {
               <div className="w-16 h-16 rounded-2xl bg-neutral-800 flex items-center justify-center mx-auto mb-4">
                 <Search size={28} className="text-neutral-500" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">Søg efter indhold</h2>
-              <p className="text-neutral-400 max-w-sm mx-auto">Find produkter og portfolio — forstår synonymer og stavefejl.</p>
+              <h2 className="text-xl font-semibold mb-2"><EditableContent contentKey="search-page-soeg-efter-indhold" fallback="Søg efter indhold" /></h2>
+              <p className="text-neutral-400 max-w-sm mx-auto"><EditableContent contentKey="search-page-find-produkter-og-portfolio-forstaar" fallback="Find produkter og portfolio — forstår synonymer og stavefejl." /></p>
             </div>
           )}
 
@@ -272,9 +267,9 @@ const SearchPage: React.FC = () => {
               <div className="w-16 h-16 rounded-2xl bg-neutral-800 flex items-center justify-center mx-auto mb-4">
                 <Search size={28} className="text-neutral-500" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">Ingen resultater fundet</h2>
-              <p className="text-neutral-400 mb-6">Prøv andre ord — søgningen forstår f.eks. at "hus" er det samme som "ejendom".</p>
-              <Link to="/products" className="btn-primary">Se Alle Produkter</Link>
+              <h2 className="text-xl font-semibold mb-2"><EditableContent contentKey="search-page-ingen-resultater-fundet" fallback="Ingen resultater fundet" /></h2>
+              <p className="text-neutral-400 mb-6"><EditableContent contentKey="search-page-proev-andre-ord-soegningen-forstaar" fallback="Prøv andre ord — søgningen forstår f.eks. at &quot;hus&quot; er det samme som &quot;ejendom&quot;." /></p>
+              <Link to="/products" className="btn-primary"><EditableContent contentKey="search-page-se-alle-produkter" fallback="Se Alle Produkter" /></Link>
             </div>
           )}
 
@@ -317,12 +312,12 @@ const SearchPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Package size={18} className="text-primary" />
                       <h2 className="text-lg font-semibold">
-                        Produkter <span className="text-neutral-500 text-sm font-normal">({products.length})</span>
+                        <EditableContent contentKey="search-page-produkter" fallback="Produkter" /><span className="text-neutral-500 text-sm font-normal">({products.length})</span>
                       </h2>
                     </div>
                     {tab === 'all' && products.length > 3 && (
                       <button onClick={() => setTab('products')} className="text-sm text-primary flex items-center gap-1 hover:opacity-80">
-                        Se alle <ArrowRight size={14} />
+                        <EditableContent contentKey="search-page-se-alle" fallback="Se alle" /><ArrowRight size={14} />
                       </button>
                     )}
                   </div>
@@ -362,7 +357,7 @@ const SearchPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Image size={18} className="text-primary" />
                       <h2 className="text-lg font-semibold">
-                        Portfolio <span className="text-neutral-500 text-sm font-normal">({portfolio.length})</span>
+                        <EditableContent contentKey="search-page-portfolio" fallback="Portfolio" /><span className="text-neutral-500 text-sm font-normal">({portfolio.length})</span>
                       </h2>
                     </div>
                     {tab === 'all' && portfolio.length > 3 && (
@@ -381,7 +376,7 @@ const SearchPage: React.FC = () => {
                             <Hi html={getHighlight(_highlight?.title, item.title, query)} />
                           </h3>
                           <div className="flex items-center justify-between mt-1.5 text-xs text-neutral-400">
-                            <span>{item.likes} likes</span>
+                            <span>{item.likes} <EditableContent contentKey="search-page-likes" fallback="likes" /></span>
                             <ArrowRight size={14} className="group-hover:text-primary transition-colors" />
                           </div>
                         </div>
@@ -397,7 +392,7 @@ const SearchPage: React.FC = () => {
                   <div className="flex items-center gap-2 mb-4">
                     <FileText size={18} className="text-primary" />
                     <h2 className="text-lg font-semibold">
-                      Sider <span className="text-neutral-500 text-sm font-normal">({pages.length})</span>
+                      <EditableContent contentKey="search-page-sider" fallback="Sider" /><span className="text-neutral-500 text-sm font-normal">({pages.length})</span>
                     </h2>
                   </div>
                   <div className="space-y-2">

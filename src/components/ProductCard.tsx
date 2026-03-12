@@ -30,6 +30,7 @@ export const ProductCardSkeleton: React.FC<ProductCardSkeletonProps> = ({ classN
   </div>
 );
 import { Link } from 'lucide-react';
+import EditableContent from './EditableContent';
 
 interface ProductCardProps {
   product: Product;
@@ -154,13 +155,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 <div className="mt-4">
   {/* Top Row: Price and Se detaljer (Stretched) */}
   <div className="flex items-center mb-3">
-    <span className="text-xl font-bold text-primary whitespace-nowrap">{product.price} kr</span>
+    <span className="text-xl font-bold text-primary whitespace-nowrap">{product.price} <EditableContent contentKey="product-card-kr" fallback="kr" /></span>
     <button 
       onClick={handleViewProduct} 
       className="ml-4 flex-1 btn-secondary text-sm px-4 py-2"
     >
-      Se detaljer
-    </button>
+      <EditableContent contentKey="product-card-se-detaljer" fallback="Se detaljer" /></button>
   </div>
 
   {/* Button Stack: Book Nu and Book For Mig */}
@@ -169,16 +169,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       onClick={handleOrderClick} 
       className="w-full btn-primary text-sm px-4 py-3 flex flex-col items-center"
     >
-      <span className="font-bold text-base block">Book Nu</span>
-      <span className="text-xs opacity-80 font-normal">Du vælger selv tid og dato efter dine behov</span>
+      <span className="font-bold text-base block"><EditableContent contentKey="product-card-book-nu" fallback="Book Nu" /></span>
+      <span className="text-xs opacity-80 font-normal"><EditableContent contentKey="product-card-du-vaelger-selv-tid-og" fallback="Du vælger selv tid og dato efter dine behov" /></span>
     </button>
     
     <button 
       onClick={handleSimpleRequestClick}
       className="w-full btn-secondary text-sm px-4 py-3 border-2 border-primary/30 hover:border-primary/60 transition-colors flex flex-col items-center"
     >
-      <span className="font-bold text-base block">Smart Booking</span>
-      <span className="text-xs opacity-80 font-normal text-neutral-400">Vi vælger dato og tid efter lysforholdende</span>
+      <span className="font-bold text-base block"><EditableContent contentKey="product-card-smart-booking" fallback="Smart Booking" /></span>
+      <span className="text-xs opacity-80 font-normal text-neutral-400"><EditableContent contentKey="product-card-vi-vaelger-dato-og-tid" fallback="Vi vælger dato og tid efter lysforholdende" /></span>
     </button>
   </div>
 </div>
