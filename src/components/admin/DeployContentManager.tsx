@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   GitBranch, Rocket, CheckCircle, XCircle, AlertTriangle,
   FileCode, SkipForward, RefreshCw, ExternalLink, Info, Clock, X, Globe,
-  PlusSquare, Tag, Layout,
+  PlusSquare, Tag, Layout, Plus,
 } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
 import { getAutoDeployMsRemaining, cancelAutoDeploy } from '../../hooks/useSiteContent';
@@ -35,26 +35,36 @@ interface AddEditableResult {
 type DeployStatus = 'idle' | 'loading' | 'success' | 'error';
 type AddStatus    = 'idle' | 'scanning' | 'success' | 'error';
 
-// Hardcoded route list — mirrors App.tsx and the edge function's ROUTE_MAP.
-// Label and URL are what the user sees; the edge function handles URL→file mapping.
+// ─── ROUTES ───────────────────────────────────────────────────────────────────
 const ROUTES: Array<{ url: string; label: string; group: string }> = [
-  { url: '/',               label: 'Forside',              group: 'Sider' },
-  { url: '/products',       label: 'Produkter',            group: 'Sider' },
-  { url: '/product/',       label: 'Produkt-detalje',      group: 'Sider' },
-  { url: '/portfolio',      label: 'Portfolio',            group: 'Sider' },
-  { url: '/search',         label: 'Søg',                  group: 'Sider' },
-  { url: '/coverage',       label: 'Dækningsområder',      group: 'Sider' },
-  { url: '/simple-request', label: 'Simpel forespørgsel',  group: 'Sider' },
-  { url: '/booking/',       label: 'Booking',              group: 'Sider' },
-  { url: '/booking-success',label: 'Booking-bekræftelse',  group: 'Sider' },
-  { url: '/payment',        label: 'Betaling',             group: 'Sider' },
-  { url: '/donate/',        label: 'Donation',             group: 'Sider' },
-  { url: '/ratings',        label: 'Anmeldelser',          group: 'Sider' },
-  { url: '/terms',          label: 'Vilkår',               group: 'Indhold' },
-  { url: '/policies',       label: 'Privatpolitik',        group: 'Indhold' },
-  { url: '/auth',           label: 'Login / Opret konto',  group: 'Konto' },
-  { url: '/profile',        label: 'Profil',               group: 'Konto' },
-  { url: '/buy-credits',    label: 'Køb credits',          group: 'Konto' },
+  // Sider
+  { url: '/',                label: 'Forside',              group: 'Sider' },
+  { url: '/products',        label: 'Produkter',            group: 'Sider' },
+  { url: '/product/',        label: 'Produkt-detalje',      group: 'Sider' },
+  { url: '/portfolio',       label: 'Portfolio',            group: 'Sider' },
+  { url: '/search',          label: 'Søg',                  group: 'Sider' },
+  { url: '/coverage',        label: 'Dækningsområder',      group: 'Sider' },
+  { url: '/simple-request',  label: 'Simpel forespørgsel',  group: 'Sider' },
+  { url: '/booking/',        label: 'Booking',              group: 'Sider' },
+  { url: '/booking-success', label: 'Booking-bekræftelse',  group: 'Sider' },
+  { url: '/payment',         label: 'Betaling',             group: 'Sider' },
+  { url: '/donate/',         label: 'Donation',             group: 'Sider' },
+  { url: '/ratings',         label: 'Anmeldelser',          group: 'Sider' },
+  { url: '/rate-booking/',   label: 'Bedøm booking',        group: 'Sider' },
+  { url: '/unsubscribe',     label: 'Afmeld nyhedsbrev',    group: 'Sider' },
+  { url: '/file/gofile/',    label: 'Fil-download',         group: 'Sider' },
+  // Indhold
+  { url: '/terms',           label: 'Vilkår',               group: 'Indhold' },
+  { url: '/policies',        label: 'Privatpolitik',        group: 'Indhold' },
+  // Konto
+  { url: '/auth',            label: 'Login / Opret konto',  group: 'Konto' },
+  { url: '/profile',         label: 'Profil',               group: 'Konto' },
+  { url: '/buy-credits',     label: 'Køb credits',          group: 'Konto' },
+  { url: '/reset-password',  label: 'Nulstil adgangskode',  group: 'Konto' },
+  { url: '/update-password', label: 'Opdater adgangskode',  group: 'Konto' },
+  { url: '/email-confirmed', label: 'Email bekræftet',      group: 'Konto' },
+  // Admin
+  { url: '/admin',           label: 'Admin',                group: 'Admin' },
 ];
 
 function formatMs(ms: number): string {
@@ -94,26 +104,45 @@ const UrlPickerModal: React.FC<{
   onConfirm: (urls: string[]) => void;
 }> = ({ onClose, onConfirm }) => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [customInput, setCustomInput] = useState('');
+  const [customUrls, setCustomUrls] = useState<string[]>([]);
 
   const toggle = (url: string) => setSelected(prev => {
     const n = new Set(prev); n.has(url) ? n.delete(url) : n.add(url); return n;
   });
-  const selectAll  = () => setSelected(new Set(ROUTES.map(r => r.url)));
-  const clearAll   = () => setSelected(new Set());
+  const selectAll = () => setSelected(new Set([...ROUTES.map(r => r.url), ...customUrls]));
+  const clearAll  = () => setSelected(new Set());
   const selectGroup = (g: string) => setSelected(prev => {
     const n = new Set(prev);
     ROUTES.filter(r => r.group === g).forEach(r => n.add(r.url));
     return n;
   });
 
+  const addCustomUrl = () => {
+    const raw = customInput.trim();
+    if (!raw) return;
+    const url = raw.startsWith('/') ? raw : `/${raw}`;
+    if (!customUrls.includes(url)) setCustomUrls(prev => [...prev, url]);
+    setSelected(prev => new Set([...prev, url]));
+    setCustomInput('');
+  };
+
+  const removeCustomUrl = (url: string) => {
+    setCustomUrls(prev => prev.filter(u => u !== url));
+    setSelected(prev => { const n = new Set(prev); n.delete(url); return n; });
+  };
+
   const groups = [...new Set(ROUTES.map(r => r.group))];
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-800 border border-neutral-600 rounded-xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl">
-
+      {/* Fixed height using min() so it's tall but never overflows the viewport */}
+      <div
+        className="bg-neutral-800 border border-neutral-600 rounded-xl w-full max-w-md flex flex-col shadow-2xl"
+        style={{ height: 'min(95vh, 740px)' }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-700 shrink-0">
           <div className="flex items-center gap-2">
             <Globe size={20} className="text-primary" />
             <h3 className="text-lg font-bold text-white">Vælg sider at gøre redigerbare</h3>
@@ -122,7 +151,7 @@ const UrlPickerModal: React.FC<{
         </div>
 
         {/* Info */}
-        <div className="mx-5 mt-4 bg-blue-900/20 border border-blue-700/40 rounded-lg px-4 py-3 flex gap-2">
+        <div className="mx-5 mt-4 bg-blue-900/20 border border-blue-700/40 rounded-lg px-4 py-3 flex gap-2 shrink-0">
           <Info size={15} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-300">
             For hver URL scannes sidens fil <span className="text-blue-200 font-medium">og alle importerede komponenter</span> rekursivt.
@@ -133,7 +162,7 @@ const UrlPickerModal: React.FC<{
         </div>
 
         {/* Quick select */}
-        <div className="px-5 pt-3 flex flex-wrap gap-2">
+        <div className="px-5 pt-3 flex flex-wrap gap-2 shrink-0">
           <button onClick={selectAll}  className="text-xs px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors">Vælg alle</button>
           <button onClick={clearAll}   className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">Fravælg alle</button>
           {groups.map(g => (
@@ -144,8 +173,8 @@ const UrlPickerModal: React.FC<{
           <span className="ml-auto text-xs text-neutral-400 self-center">{selected.size} valgt</span>
         </div>
 
-        {/* Route list */}
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
+        {/* Route list — flex-1 + min-h-0 is the key: forces overflow to activate */}
+        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4 min-h-0">
           {groups.map(group => (
             <div key={group}>
               <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">{group}</p>
@@ -168,10 +197,50 @@ const UrlPickerModal: React.FC<{
               </div>
             </div>
           ))}
+
+          {/* Custom URLs */}
+          <div>
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Brugerdefineret URL</p>
+            {customUrls.map(url => (
+              <label key={url} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-700/60 cursor-pointer group border border-transparent hover:border-neutral-600 transition-all mb-1">
+                <input
+                  type="checkbox"
+                  checked={selected.has(url)}
+                  onChange={() => toggle(url)}
+                  className="rounded accent-primary shrink-0"
+                />
+                <p className="flex-1 text-xs font-mono text-neutral-300">{url}</p>
+                <button
+                  onClick={e => { e.preventDefault(); removeCustomUrl(url); }}
+                  className="p-1 rounded hover:bg-red-900/40 text-neutral-600 hover:text-red-400 transition-colors shrink-0"
+                >
+                  <X size={12} />
+                </button>
+              </label>
+            ))}
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={customInput}
+                onChange={e => setCustomInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomUrl(); } }}
+                placeholder="/min-side eller /produkt/123"
+                className="flex-1 text-xs font-mono bg-neutral-900 border border-neutral-600 rounded-lg px-3 py-2.5 text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-primary/60 transition-colors"
+              />
+              <button
+                onClick={addCustomUrl}
+                disabled={!customInput.trim()}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors shrink-0
+                  ${!customInput.trim() ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed' : 'bg-primary/20 hover:bg-primary/30 text-primary'}`}
+              >
+                <Plus size={13} /> Tilføj
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-neutral-700 flex gap-3">
+        <div className="px-5 py-4 border-t border-neutral-700 flex gap-3 shrink-0">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-medium transition-colors">Annuller</button>
           <button
             disabled={selected.size === 0}
@@ -254,6 +323,35 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
           </Collapsible>
         )}
       </div>
+    </div>
+  );
+};
+
+// ─── Shared sub-components ────────────────────────────────────────────────────
+const colorMap = {
+  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: 'text-green-400',  badge: 'bg-green-900/40 text-green-300'  },
+  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: 'text-blue-400',   badge: 'bg-blue-900/40 text-blue-300'    },
+  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: 'text-yellow-400', badge: 'bg-yellow-900/40 text-yellow-300' },
+  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: 'text-red-400',    badge: 'bg-red-900/40 text-red-300'      },
+};
+
+const Collapsible: React.FC<{ title: string; color: keyof typeof colorMap; open: boolean; onToggle: () => void; children: React.ReactNode }> = ({ title, color, open, onToggle, children }) => {
+  const c = colorMap[color];
+  return (
+    <div className={`rounded-lg border ${c.border} overflow-hidden`}>
+      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text} hover:brightness-110 transition-all`}>
+        <span>{title}</span><span className="text-xs opacity-60">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && <div className="px-4 py-3 bg-neutral-800/50">{children}</div>}
+    </div>
+  );
+};
+
+const TagList: React.FC<{ items: string[]; color: keyof typeof colorMap; mono?: boolean }> = ({ items, color, mono }) => {
+  const c = colorMap[color];
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map(item => <span key={item} className={`text-xs px-2 py-0.5 rounded ${c.badge} ${mono ? 'font-mono' : ''}`}>{item}</span>)}
     </div>
   );
 };
@@ -496,35 +594,6 @@ const DeployContentManager: React.FC = () => {
       )}
 
       {showUrlPicker && <UrlPickerModal onClose={() => setShowUrlPicker(false)} onConfirm={handleAddEditable} />}
-    </div>
-  );
-};
-
-// ─── Shared sub-components ────────────────────────────────────────────────────
-const colorMap = {
-  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: 'text-green-400',  badge: 'bg-green-900/40 text-green-300'  },
-  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: 'text-blue-400',   badge: 'bg-blue-900/40 text-blue-300'    },
-  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: 'text-yellow-400', badge: 'bg-yellow-900/40 text-yellow-300' },
-  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: 'text-red-400',    badge: 'bg-red-900/40 text-red-300'      },
-};
-
-const Collapsible: React.FC<{ title: string; color: keyof typeof colorMap; open: boolean; onToggle: () => void; children: React.ReactNode }> = ({ title, color, open, onToggle, children }) => {
-  const c = colorMap[color];
-  return (
-    <div className={`rounded-lg border ${c.border} overflow-hidden`}>
-      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text} hover:brightness-110 transition-all`}>
-        <span>{title}</span><span className="text-xs opacity-60">{open ? '▲' : '▼'}</span>
-      </button>
-      {open && <div className="px-4 py-3 bg-neutral-800/50">{children}</div>}
-    </div>
-  );
-};
-
-const TagList: React.FC<{ items: string[]; color: keyof typeof colorMap; mono?: boolean }> = ({ items, color, mono }) => {
-  const c = colorMap[color];
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {items.map(item => <span key={item} className={`text-xs px-2 py-0.5 rounded ${c.badge} ${mono ? 'font-mono' : ''}`}>{item}</span>)}
     </div>
   );
 };
