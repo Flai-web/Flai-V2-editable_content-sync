@@ -3,16 +3,15 @@ import { Search, X, ArrowRight, Package, FileText, Calendar } from 'lucide-react
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { getSearchTerms, termMatches, scoreProduct } from '../utils/searchSynonyms';
-import EditableContent from './EditableContent';
 
 interface SearchButtonProps { isMobile?: boolean; }
 
 const QUICK_PAGES = [
-  { id: 'products',  title: () => <EditableContent contentKey="search-button-vores-tjenester" fallback="Vores Tjenester" />, url: '/products'  },
-  { id: 'portfolio', title: () => <EditableContent contentKey="search-button-vores-arbejde" fallback="Vores Arbejde" />,   url: '/portfolio' },
-  { id: 'contact',   title: () => <EditableContent contentKey="search-button-kontakt" fallback="Kontakt" />,         url: '/contact'   },
-  { id: 'booking',   title: () => <EditableContent contentKey="search-button-book-nu" fallback="Book nu" />,         url: '/booking'   },
-  { id: 'ratings',   title: () => <EditableContent contentKey="search-button-anmeldelser" fallback="Anmeldelser" />,     url: '/ratings'   },
+  { id: 'products',  title: 'Vores Tjenester', url: '/products'  },
+  { id: 'portfolio', title: 'Vores Arbejde',   url: '/portfolio' },
+  { id: 'contact',   title: 'Kontakt',         url: '/contact'   },
+  { id: 'booking',   title: 'Book nu',         url: '/booking'   },
+  { id: 'ratings',   title: 'Anmeldelser',     url: '/ratings'   },
 ];
 
 
@@ -96,7 +95,7 @@ const SearchButton: React.FC<SearchButtonProps> = ({ isMobile = false }) => {
               <button key={p.id} {...ev(() => { navigate(p.url); handleClose(); })}
                 className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-neutral-700 text-left transition-colors group">
                 <FileText size={14} className="text-neutral-400 shrink-0" />
-                <span className="text-sm text-white flex-1">{p.title()}</span>
+                <span className="text-sm text-white flex-1">{p.title}</span>
                 <ArrowRight size={12} className="text-neutral-600 group-hover:text-primary shrink-0 transition-colors" />
               </button>
             ))}
