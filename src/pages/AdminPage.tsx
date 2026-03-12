@@ -112,7 +112,7 @@ const AdminPage: React.FC = () => {
       <div className="pt-24 pb-16 min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-neutral-400">
           <div className="w-10 h-10 border-4 border-neutral-600 border-t-primary rounded-full animate-spin" />
-          <span className="text-sm"><EditableContent contentKey="admin-page-checker-adgang" fallback="Checker adgang…" /></span>
+          <span className="text-sm">Checker adgang…</span>
         </div>
       </div>
     );
@@ -142,19 +142,19 @@ const AdminPage: React.FC = () => {
   }
 
   const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
-    { id: 'bookings',        label: () => Bookinger,              icon: Calendar  },
-    { id: 'booking-config',  label: () => Ugentlige tilgængligheder, icon: Clock     },
-    { id: 'products',        label: () => Produkter,              icon: Package   },
-    { id: 'portfolio',       label: () => Portfolio,              icon: Image     },
-    { id: 'external-images', label: () => Eksterne Billeder,      icon: FileImage },
-    { id: 'zones',           label: () => Adressezoner,           icon: MapPin    },
-    { id: 'discounts',       label: () => Rabatkoder,             icon: Tag       },
-    { id: 'donations',       label: () => Donationer,             icon: Heart     },
-    { id: 'newsletter',      label: () => Nyhedsbreve,            icon: Mail      },
-    { id: 'video',           label: () => Videoer,                icon: Video     },
-    { id: 'home-sections',   label: () => Forside Sektioner,      icon: Home      },
-    { id: 'users',           label: () => Brugere,                icon: Users     },
-    { id: 'deploy',          label: () => Deploy til GitHub,      icon: GitBranch },
+    { id: 'bookings',        label: 'Bookinger',              icon: Calendar  },
+    { id: 'booking-config',  label: 'Ugentlige tilgængligheder', icon: Clock     },
+    { id: 'products',        label: 'Produkter',              icon: Package   },
+    { id: 'portfolio',       label: 'Portfolio',              icon: Image     },
+    { id: 'external-images', label: 'Eksterne Billeder',      icon: FileImage },
+    { id: 'zones',           label: 'Adressezoner',           icon: MapPin    },
+    { id: 'discounts',       label: 'Rabatkoder',             icon: Tag       },
+    { id: 'donations',       label: 'Donationer',             icon: Heart     },
+    { id: 'newsletter',      label: 'Nyhedsbreve',            icon: Mail      },
+    { id: 'video',           label: 'Videoer',                icon: Video     },
+    { id: 'home-sections',   label: 'Forside Sektioner',      icon: Home      },
+    { id: 'users',           label: 'Brugere',                icon: Users     },
+    { id: 'deploy',          label: 'Deploy til GitHub',      icon: GitBranch },
   ];
 
   const renderTabContent = () => {
@@ -207,7 +207,7 @@ const AdminPage: React.FC = () => {
                     }`}
                   >
                     <Icon size={20} />
-                    <span>{tab.label()}</span>
+                    <span>{tab.label}</span>
                   </button>
                 );
               })}
