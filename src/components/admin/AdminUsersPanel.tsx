@@ -63,19 +63,19 @@ const DetailsCard: React.FC<{ user: UserProfile; onClose: () => void }> = ({ use
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-2">
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Credits</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-credits" fallback="Credits" /></p>
           <p className="font-bold text-primary">{user.credits}</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Bookinger</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-bookinger" fallback="Bookinger" /></p>
           <p className="font-bold">{loading ? '…' : bookings.length}</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Login</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-login" fallback="Login" /></p>
           <p className="font-bold capitalize text-xs">{user.provider || '—'}</p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-2 text-center">
-          <p className="text-neutral-500 text-xs">Sidst aktiv</p>
+          <p className="text-neutral-500 text-xs"><EditableContent contentKey="admin-users-panel-sidst-aktiv" fallback="Sidst aktiv" /></p>
           <p className="font-bold text-xs">
             {user.last_sign_in
               ? new Date(user.last_sign_in).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })
@@ -342,7 +342,7 @@ const UserRow: React.FC<{
           )}
           {user.is_admin && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex items-center gap-1">
-              <Shield size={10} /> Admin
+              <Shield size={10} /> 'Admin'
             </span>
           )}
           <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-700 text-neutral-300 flex items-center gap-1">
@@ -360,7 +360,7 @@ const UserRow: React.FC<{
                 : 'bg-neutral-700 hover:bg-neutral-600 text-neutral-300 hover:text-white'
             }`}
           >
-            <Eye size={12} /> Detaljer
+            <Eye size={12} /> 'Detaljer'
           </button>
           <button
             onClick={handleSupportClick}
@@ -542,9 +542,9 @@ const AdminUsersPanel: React.FC = () => {
             fallback="Brugere"
           />
           <p className="text-neutral-400 text-sm mt-0.5">
-            {users.length} <EditableContent contentKey="admin-users-count-label" as="span" fallback="brugere" />
+            {users.length} 'brugere'
             {' · '}
-            {users.filter(u => u.is_admin).length} <EditableContent contentKey="admin-users-admin-count-label" as="span" fallback="administratorer" />
+            {users.filter(u => u.is_admin).length} 'administratorer'
           </p>
         </div>
         <button

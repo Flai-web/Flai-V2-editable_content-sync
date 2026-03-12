@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../utils/supabase';
 import { getAutoDeployMsRemaining, cancelAutoDeploy } from '../../hooks/useSiteContent';
 import toast from 'react-hot-toast';
+import EditableContent from '../EditableContent';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface DeployResult {
@@ -54,36 +55,36 @@ type AddStatus    = 'idle' | 'scanning' | 'success' | 'error';
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 const ROUTES: Array<{ url: string; label: string; group: string }> = [
   // Sider
-  { url: '/',                label: 'Forside',              group: 'Sider' },
-  { url: '/products',        label: 'Produkter',            group: 'Sider' },
-  { url: '/product/',        label: 'Produkt-detalje',      group: 'Sider' },
-  { url: '/portfolio',       label: 'Portfolio',            group: 'Sider' },
-  { url: '/search',          label: 'Søg',                  group: 'Sider' },
-  { url: '/coverage',        label: 'Dækningsområder',      group: 'Sider' },
-  { url: '/simple-request',  label: 'Simpel forespørgsel',  group: 'Sider' },
-  { url: '/booking/',        label: 'Booking',              group: 'Sider' },
-  { url: '/booking-success', label: 'Booking-bekræftelse',  group: 'Sider' },
-  { url: '/payment',         label: 'Betaling',             group: 'Sider' },
-  { url: '/donate/',         label: 'Donation',             group: 'Sider' },
-  { url: '/ratings',         label: 'Anmeldelser',          group: 'Sider' },
-  { url: '/rate-booking/',   label: 'Bedøm booking',        group: 'Sider' },
-  { url: '/unsubscribe',     label: 'Afmeld nyhedsbrev',    group: 'Sider' },
-  { url: '/file/gofile/',    label: 'Fil-download',         group: 'Sider' },
+  { url: '/',                label: () => <EditableContent contentKey="deploy-content-manager-forside" fallback="Forside" />,              group: 'Sider' },
+  { url: '/products',        label: () => <EditableContent contentKey="deploy-content-manager-produkter" fallback="Produkter" />,            group: 'Sider' },
+  { url: '/product/',        label: () => <EditableContent contentKey="deploy-content-manager-produkt-detalje" fallback="Produkt-detalje" />,      group: 'Sider' },
+  { url: '/portfolio',       label: () => <EditableContent contentKey="deploy-content-manager-portfolio" fallback="Portfolio" />,            group: 'Sider' },
+  { url: '/search',          label: () => <EditableContent contentKey="deploy-content-manager-soeg" fallback="Søg" />,                  group: 'Sider' },
+  { url: '/coverage',        label: () => <EditableContent contentKey="deploy-content-manager-daekningsomraader" fallback="Dækningsområder" />,      group: 'Sider' },
+  { url: '/simple-request',  label: () => <EditableContent contentKey="deploy-content-manager-simpel-forespoergsel" fallback="Simpel forespørgsel" />,  group: 'Sider' },
+  { url: '/booking/',        label: () => <EditableContent contentKey="deploy-content-manager-booking" fallback="Booking" />,              group: 'Sider' },
+  { url: '/booking-success', label: () => <EditableContent contentKey="deploy-content-manager-booking-bekraeftelse" fallback="Booking-bekræftelse" />,  group: 'Sider' },
+  { url: '/payment',         label: () => <EditableContent contentKey="deploy-content-manager-betaling" fallback="Betaling" />,             group: 'Sider' },
+  { url: '/donate/',         label: () => <EditableContent contentKey="deploy-content-manager-donation" fallback="Donation" />,             group: 'Sider' },
+  { url: '/ratings',         label: () => <EditableContent contentKey="deploy-content-manager-anmeldelser" fallback="Anmeldelser" />,          group: 'Sider' },
+  { url: '/rate-booking/',   label: () => <EditableContent contentKey="deploy-content-manager-bedoem-booking" fallback="Bedøm booking" />,        group: 'Sider' },
+  { url: '/unsubscribe',     label: () => <EditableContent contentKey="deploy-content-manager-afmeld-nyhedsbrev" fallback="Afmeld nyhedsbrev" />,    group: 'Sider' },
+  { url: '/file/gofile/',    label: () => <EditableContent contentKey="deploy-content-manager-fil-download" fallback="Fil-download" />,         group: 'Sider' },
   // Indhold
-  { url: '/terms',           label: 'Vilkår',               group: 'Indhold' },
-  { url: '/policies',        label: 'Privatpolitik',        group: 'Indhold' },
+  { url: '/terms',           label: () => <EditableContent contentKey="deploy-content-manager-vilkaar" fallback="Vilkår" />,               group: 'Indhold' },
+  { url: '/policies',        label: () => <EditableContent contentKey="deploy-content-manager-privatpolitik" fallback="Privatpolitik" />,        group: 'Indhold' },
   // Konto
-  { url: '/auth',            label: 'Login / Opret konto',  group: 'Konto' },
-  { url: '/profile',         label: 'Profil',               group: 'Konto' },
-  { url: '/buy-credits',     label: 'Køb credits',          group: 'Konto' },
-  { url: '/reset-password',  label: 'Nulstil adgangskode',  group: 'Konto' },
-  { url: '/update-password', label: 'Opdater adgangskode',  group: 'Konto' },
-  { url: '/email-confirmed', label: 'Email bekræftet',      group: 'Konto' },
+  { url: '/auth',            label: () => <EditableContent contentKey="deploy-content-manager-login-opret-konto" fallback="Login / Opret konto" />,  group: 'Konto' },
+  { url: '/profile',         label: () => <EditableContent contentKey="deploy-content-manager-profil" fallback="Profil" />,               group: 'Konto' },
+  { url: '/buy-credits',     label: () => <EditableContent contentKey="deploy-content-manager-koeb-credits" fallback="Køb credits" />,          group: 'Konto' },
+  { url: '/reset-password',  label: () => <EditableContent contentKey="deploy-content-manager-nulstil-adgangskode" fallback="Nulstil adgangskode" />,  group: 'Konto' },
+  { url: '/update-password', label: () => <EditableContent contentKey="deploy-content-manager-opdater-adgangskode" fallback="Opdater adgangskode" />,  group: 'Konto' },
+  { url: '/email-confirmed', label: () => <EditableContent contentKey="deploy-content-manager-email-bekraeftet" fallback="Email bekræftet" />,      group: 'Konto' },
   // Admin
-  { url: '/admin',           label: 'Admin',                group: 'Admin' },
+  { url: '/admin',           label: () => <EditableContent contentKey="deploy-content-manager-admin" fallback="Admin" />,                group: 'Admin' },
   // Layout
-  { url: '__navbar__',       label: 'NavBar',               group: 'Layout' },
-  { url: '__footer__',       label: 'Footer',               group: 'Layout' },
+  { url: '__navbar__',       label: () => <EditableContent contentKey="deploy-content-manager-navbar" fallback="NavBar" />,               group: 'Layout' },
+  { url: '__footer__',       label: () => <EditableContent contentKey="deploy-content-manager-footer" fallback="Footer" />,               group: 'Layout' },
 ];
 
 function formatMs(ms: number): string {
@@ -110,7 +111,7 @@ const AutoDeployCountdown: React.FC<{ onCancel: () => void }> = ({ onCancel }) =
       <Clock size={16} className="text-yellow-400 shrink-0 animate-pulse" />
       <div className="flex-1">
         <p className="text-sm text-yellow-300 font-medium">Auto-deploy om <span className="font-mono font-bold">{formatMs(msLeft)}</span></p>
-        <p className="text-xs text-yellow-500">Hver indholds-ændring nulstiller timeren</p>
+        <p className="text-xs text-yellow-500"><EditableContent contentKey="deploy-content-manager-hver-indholds-aendring-nulstiller-timeren" fallback="Hver indholds-ændring nulstiller timeren" /></p>
       </div>
       <button onClick={onCancel} className="p-1 rounded hover:bg-yellow-800/50 text-yellow-400 hover:text-yellow-200 transition-colors"><X size={14} /></button>
     </div>
@@ -163,7 +164,7 @@ const UrlPickerModal: React.FC<{
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-700 shrink-0">
           <div className="flex items-center gap-2">
             <Globe size={20} className="text-primary" />
-            <h3 className="text-lg font-bold text-white">Vælg sider at gøre redigerbare</h3>
+            <h3 className="text-lg font-bold text-white"><EditableContent contentKey="deploy-content-manager-vaelg-sider-at-goere-redigerbare" fallback="Vælg sider at gøre redigerbare" /></h3>
           </div>
           <button onClick={onClose} className="p-1 rounded hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors"><X size={18} /></button>
         </div>
@@ -172,17 +173,17 @@ const UrlPickerModal: React.FC<{
         <div className="mx-5 mt-4 bg-blue-900/20 border border-blue-700/40 rounded-lg px-4 py-3 flex gap-2 shrink-0">
           <Info size={15} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-300">
-            For hver URL scannes sidens fil <span className="text-blue-200 font-medium">og alle importerede komponenter</span> rekursivt.
+            For hver URL scannes sidens fil <span className="text-blue-200 font-medium"><EditableContent contentKey="deploy-content-manager-og-alle-importerede-komponenter" fallback="og alle importerede komponenter" /></span> rekursivt.
             Konverterer automatisk: bare JSX-tekst, <code className="bg-neutral-800 px-1 rounded">{'{"streng"}'}</code>,{' '}
             <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald og <code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> i objekt-arrays.
-            Vælg <span className="text-blue-200 font-medium">Layout</span> for NavBar/Footer — de inkluderes <em>kun</em> når du vælger dem.
+            Vælg <span className="text-blue-200 font-medium"><EditableContent contentKey="deploy-content-manager-layout" fallback="Layout" /></span> for NavBar/Footer — de inkluderes <em><EditableContent contentKey="deploy-content-manager-kun" fallback="kun" /></em> når du vælger dem.
           </p>
         </div>
 
         {/* Quick select */}
         <div className="px-5 pt-3 flex flex-wrap gap-2 shrink-0">
-          <button onClick={selectAll}  className="text-xs px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors">Vælg alle</button>
-          <button onClick={clearAll}   className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">Fravælg alle</button>
+          <button onClick={selectAll}  className="text-xs px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors">'Vælg alle'</button>
+          <button onClick={clearAll}   className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">'Fravælg alle'</button>
           {groups.map(g => (
             <button key={g} onClick={() => selectGroup(g)} className="text-xs px-2 py-1 rounded bg-neutral-700 text-neutral-300 hover:bg-neutral-600 transition-colors">
               + {g}
@@ -206,7 +207,7 @@ const UrlPickerModal: React.FC<{
                       className="rounded accent-primary shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white font-medium group-hover:text-primary transition-colors">{route.label}</p>
+                      <p className="text-sm text-white font-medium group-hover:text-primary transition-colors">{route.label()}</p>
                       <p className="text-xs font-mono text-neutral-500">{route.url}</p>
                     </div>
                     <Layout size={13} className="text-neutral-600 group-hover:text-neutral-400 shrink-0" />
@@ -218,7 +219,7 @@ const UrlPickerModal: React.FC<{
 
           {/* Custom URLs */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Brugerdefineret URL</p>
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2"><EditableContent contentKey="deploy-content-manager-brugerdefineret-url" fallback="Brugerdefineret URL" /></p>
             {customUrls.map(url => (
               <label key={url} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-700/60 cursor-pointer group border border-transparent hover:border-neutral-600 transition-all mb-1">
                 <input
@@ -251,7 +252,7 @@ const UrlPickerModal: React.FC<{
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors shrink-0
                   ${!customInput.trim() ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed' : 'bg-primary/20 hover:bg-primary/30 text-primary'}`}
               >
-                <Plus size={13} /> Tilføj
+                <Plus size={13} /> 'Tilføj'
               </button>
             </div>
           </div>
@@ -259,7 +260,7 @@ const UrlPickerModal: React.FC<{
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-neutral-700 flex gap-3 shrink-0">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-medium transition-colors">Annuller</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-medium transition-colors">'Annuller'</button>
           <button
             disabled={selected.size === 0}
             onClick={() => onConfirm([...selected])}
@@ -327,22 +328,22 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Globe size={15} className="text-neutral-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-neutral-300">{result.scannedFiles}</p>
-          <p className="text-xs text-neutral-500">Scannet</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-scannet" fallback="Scannet" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <FileCode size={15} className="text-blue-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-blue-400">{result.modifiedFiles.length}</p>
-          <p className="text-xs text-neutral-500">Ændret</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-aendret" fallback="Ændret" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <Tag size={15} className="text-green-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-green-400">{result.addedKeys.length}</p>
-          <p className="text-xs text-neutral-500">Nøgler</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-noegler" fallback="Nøgler" /></p>
         </div>
         <div className="bg-neutral-800 rounded-lg p-3 text-center">
           <ShieldAlert size={15} className={hasBlocked ? 'text-amber-400 mx-auto mb-1' : 'text-neutral-600 mx-auto mb-1'} />
           <p className={`text-xl font-bold ${hasBlocked ? 'text-amber-400' : 'text-neutral-600'}`}>{(result.blockedFiles ?? []).length}</p>
-          <p className="text-xs text-neutral-500">Blokeret</p>
+          <p className="text-xs text-neutral-500"><EditableContent contentKey="deploy-content-manager-blokeret" fallback="Blokeret" /></p>
         </div>
       </div>
 
@@ -392,7 +393,7 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
                     <div key={j} className="pl-5 space-y-0.5">
                       <p className="text-xs text-red-300 font-medium">Linje {e.line}</p>
                       <p className="text-xs text-yellow-200/70 font-mono break-all">{e.issue}</p>
-                      <p className="text-xs text-neutral-500 font-mono truncate">"{e.text}"</p>
+                      <p className="text-xs text-neutral-500 font-mono truncate">"{e.text()}"</p>
                     </div>
                   ))}
                 </div>
@@ -420,7 +421,7 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
                     <span className="text-xs text-neutral-500 font-mono ml-auto truncate max-w-[140px]">{e.file.split('/').pop()}</span>
                   </div>
                   <p className="text-xs text-yellow-200/70 font-mono break-all pl-4">{e.issue}</p>
-                  <p className="text-xs text-neutral-500 font-mono truncate pl-4">"{e.text}"</p>
+                  <p className="text-xs text-neutral-500 font-mono truncate pl-4">"{e.text()}"</p>
                 </div>
               ))}
             </div>
@@ -441,18 +442,18 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 const colorMap = {
-  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: 'text-green-400',  badge: 'bg-green-900/40 text-green-300'  },
-  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: 'text-blue-400',   badge: 'bg-blue-900/40 text-blue-300'    },
-  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: 'text-yellow-400', badge: 'bg-yellow-900/40 text-yellow-300' },
-  amber:  { bg: 'bg-amber-900/20',  border: 'border-amber-700/40',  text: 'text-amber-400',  badge: 'bg-amber-900/40 text-amber-300'  },
-  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: 'text-red-400',    badge: 'bg-red-900/40 text-red-300'      },
+  green:  { bg: 'bg-green-900/20',  border: 'border-green-700/40',  text: () => <EditableContent contentKey="deploy-content-manager-text-green-400" fallback="text-green-400" />,  badge: 'bg-green-900/40 text-green-300'  },
+  blue:   { bg: 'bg-blue-900/20',   border: 'border-blue-700/40',   text: () => <EditableContent contentKey="deploy-content-manager-text-blue-400" fallback="text-blue-400" />,   badge: 'bg-blue-900/40 text-blue-300'    },
+  yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: () => <EditableContent contentKey="deploy-content-manager-text-yellow-400" fallback="text-yellow-400" />, badge: 'bg-yellow-900/40 text-yellow-300' },
+  amber:  { bg: 'bg-amber-900/20',  border: 'border-amber-700/40',  text: () => <EditableContent contentKey="deploy-content-manager-text-amber-400" fallback="text-amber-400" />,  badge: 'bg-amber-900/40 text-amber-300'  },
+  red:    { bg: 'bg-red-900/20',    border: 'border-red-700/40',    text: () => <EditableContent contentKey="deploy-content-manager-text-red-400" fallback="text-red-400" />,    badge: 'bg-red-900/40 text-red-300'      },
 };
 
 const Collapsible: React.FC<{ title: string; color: keyof typeof colorMap; open: boolean; onToggle: () => void; children: React.ReactNode }> = ({ title, color, open, onToggle, children }) => {
   const c = colorMap[color];
   return (
     <div className={`rounded-lg border ${c.border} overflow-hidden`}>
-      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text} hover:brightness-110 transition-all`}>
+      <button onClick={onToggle} className={`w-full flex items-center justify-between px-4 py-2.5 ${c.bg} text-sm font-medium ${c.text()} hover:brightness-110 transition-all`}>
         <span>{title}</span><span className="text-xs opacity-60">{open ? '▲' : '▼'}</span>
       </button>
       {open && <div className="px-4 py-3 bg-neutral-800/50">{children}</div>}
@@ -678,10 +679,10 @@ const DeployContentManager: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5">
             {[
-              { label: 'Deployed',      value: deployResult.deployedKeys.length,  color: 'text-green-400',  icon: CheckCircle },
-              { label: 'Sprunget over', value: deployResult.skippedKeys.length,   color: 'text-yellow-400', icon: SkipForward  },
-              { label: 'Filer ændret',  value: deployResult.modifiedFiles.length, color: 'text-blue-400',   icon: FileCode     },
-              { label: 'Netlify', value: deployResult.netlifyTriggered ? '✓' : '–', color: deployResult.netlifyTriggered ? 'text-green-400' : 'text-neutral-500', icon: Globe },
+              { label: () => <EditableContent contentKey="deploy-content-manager-deployed" fallback="Deployed" />,      value: deployResult.deployedKeys.length,  color: 'text-green-400',  icon: CheckCircle },
+              { label: () => <EditableContent contentKey="deploy-content-manager-sprunget-over" fallback="Sprunget over" />, value: deployResult.skippedKeys.length,   color: 'text-yellow-400', icon: SkipForward  },
+              { label: () => <EditableContent contentKey="deploy-content-manager-filer-aendret" fallback="Filer ændret" />,  value: deployResult.modifiedFiles.length, color: 'text-blue-400',   icon: FileCode     },
+              { label: () => <EditableContent contentKey="deploy-content-manager-netlify" fallback="Netlify" />, value: deployResult.netlifyTriggered ? '✓' : '–', color: deployResult.netlifyTriggered ? 'text-green-400' : 'text-neutral-500', icon: Globe },
             ].map(({ label, value, color, icon: Icon }) => (
               <div key={label} className="bg-neutral-800 rounded-lg p-3 text-center">
                 <Icon size={16} className={`${color} mx-auto mb-1`} />

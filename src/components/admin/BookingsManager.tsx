@@ -875,7 +875,7 @@ const BookingsManager: React.FC = () => {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-neutral-800 rounded-lg p-6 max-w-2xl w-full my-8">
-            <h3 className="text-xl font-bold mb-4">Opret Ny Booking</h3>
+            <h3 className="text-xl font-bold mb-4"><EditableContent contentKey="bookings-manager-opret-ny-booking" fallback="Opret Ny Booking" /></h3>
             
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -983,7 +983,7 @@ const BookingsManager: React.FC = () => {
                   {loadingProducts ? (
                     <div className="flex items-center justify-center p-3 bg-neutral-700 rounded">
                       <Loader size={20} className="animate-spin text-primary mr-2" />
-                      <span className="text-sm text-neutral-400">Indlæser produkter...</span>
+                      <span className="text-sm text-neutral-400"><EditableContent contentKey="bookings-manager-indlaeser-produkter" fallback="Indlæser produkter..." /></span>
                     </div>
                   ) : (
                     <select
@@ -1019,7 +1019,7 @@ const BookingsManager: React.FC = () => {
                     </select>
                   )}
                   {products.length === 0 && !loadingProducts && (
-                    <p className="text-xs text-warning mt-1">Ingen produkter fundet</p>
+                    <p className="text-xs text-warning mt-1"><EditableContent contentKey="bookings-manager-ingen-produkter-fundet" fallback="Ingen produkter fundet" /></p>
                   )}
                 </div>
 
@@ -1134,7 +1134,7 @@ const BookingsManager: React.FC = () => {
                     onChange={(e) => setNewBookingData(prev => ({ ...prev, send_confirmation_email: e.target.checked }))}
                     className="mr-2"
                   />
-                  <span className="text-sm text-neutral-300">Send Bekræftelses Email</span>
+                  <span className="text-sm text-neutral-300"><EditableContent contentKey="bookings-manager-send-bekraeftelses-email" fallback="Send Bekræftelses Email" /></span>
                 </label>
               </div>
             </div>
@@ -1251,11 +1251,11 @@ const BookingsManager: React.FC = () => {
         <div className="bg-neutral-700/20 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-neutral-400 text-sm">Smart Bookinger</p>
+              <p className="text-neutral-400 text-sm"><EditableContent contentKey="bookings-manager-smart-bookinger" fallback="Smart Bookinger" /></p>
               <p className="text-xl font-bold text-purple-400">
                 {bookings.filter(b => b.mode === 'smart' && !b.is_archived).length}
               </p>
-              <p className="text-xs text-neutral-500 mt-1">Afventer dato/tid</p>
+              <p className="text-xs text-neutral-500 mt-1"><EditableContent contentKey="bookings-manager-afventer-dato-tid" fallback="Afventer dato/tid" /></p>
             </div>
             <Zap className="text-purple-400" size={20} />
           </div>
@@ -1344,7 +1344,7 @@ const BookingsManager: React.FC = () => {
                     <p className="font-medium text-white">
                       {booking.product_id
                         ? getProductName(booking.product_id)
-                        : <span className="italic text-neutral-500">Intet produkt</span>}
+                        : <span className="italic text-neutral-500"><EditableContent contentKey="bookings-manager-intet-produkt" fallback="Intet produkt" /></span>}
                     
                     {booking.booking_date && booking.booking_time ? (
                       <p className="text-sm text-neutral-400">
@@ -1555,7 +1555,7 @@ const BookingsManager: React.FC = () => {
                       <h4 className="font-semibold text-white">Ekstra Information (Raw Data)</h4>
                     </div>
                     {(!booking.extra_information || Object.keys(booking.extra_information).length === 0) ? (
-                      <p className="text-neutral-400 text-sm italic">Ingen ekstra information fundet for denne booking.</p>
+                      <p className="text-neutral-400 text-sm italic"><EditableContent contentKey="bookings-manager-ingen-ekstra-information-fundet-for" fallback="Ingen ekstra information fundet for denne booking." /></p>
                     ) : (
                       <div className="bg-neutral-900 rounded p-3 overflow-x-auto">
                         <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
@@ -1573,7 +1573,7 @@ const BookingsManager: React.FC = () => {
                   <div className="bg-error/10 border border-error/30 rounded-lg p-6">
                     <div className="flex items-center mb-4">
                       <Trash2 size={24} className="text-error mr-3" />
-                      <h4 className="font-semibold text-error text-lg">Bekræft Sletning</h4>
+                      <h4 className="font-semibold text-error text-lg"><EditableContent contentKey="bookings-manager-bekraeft-sletning" fallback="Bekræft Sletning" /></h4>
                     </div>
                     <p className="text-neutral-300 mb-4">
                       Er du sikker på, at du vil slette denne booking? Dette kan ikke fortrydes.
@@ -1609,7 +1609,7 @@ const BookingsManager: React.FC = () => {
                         <Zap className="text-white" size={28} />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold">Gennemfør Smart Booking</h3>
+                        <h3 className="text-2xl font-bold"><EditableContent contentKey="bookings-manager-gennemfoer-smart-booking" fallback="Gennemfør Smart Booking" /></h3>
                         <p className="text-sm text-neutral-400">Booking #{booking.id}</p>
                       </div>
                     </div>
@@ -1621,19 +1621,19 @@ const BookingsManager: React.FC = () => {
                       </h4>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="col-span-2 md:col-span-1">
-                          <span className="text-neutral-400 block mb-1">Produkt</span>
+                          <span className="text-neutral-400 block mb-1"><EditableContent contentKey="bookings-manager-produkt" fallback="Produkt" /></span>
                           <p className="font-medium text-white">{getProductName(booking.product_id)}</p>
                         </div>
                         <div className="col-span-2 md:col-span-1">
-                          <span className="text-neutral-400 block mb-1">Pris</span>
+                          <span className="text-neutral-400 block mb-1"><EditableContent contentKey="bookings-manager-pris" fallback="Pris" /></span>
                           <p className="font-bold text-primary text-lg">{booking.price} kr</p>
                         </div>
                         <div className="col-span-2 md:col-span-1">
-                          <span className="text-neutral-400 block mb-1">Kunde</span>
+                          <span className="text-neutral-400 block mb-1"><EditableContent contentKey="bookings-manager-kunde" fallback="Kunde" /></span>
                           <p className="font-medium text-white">{booking.customer_name}</p>
                         </div>
                         <div className="col-span-2 md:col-span-1">
-                          <span className="text-neutral-400 block mb-1">Betaling</span>
+                          <span className="text-neutral-400 block mb-1"><EditableContent contentKey="bookings-manager-betaling" fallback="Betaling" /></span>
                           <span className={`inline-block px-2 py-1 text-xs rounded font-semibold ${
                             booking.payment_status === 'paid' ? 'bg-green-500/20 text-green-400' :
                             booking.payment_status === 'awaiting_payment' ? 'bg-blue-500/20 text-blue-400' :
@@ -1643,11 +1643,11 @@ const BookingsManager: React.FC = () => {
                           </span>
                         </div>
                         <div className="col-span-2">
-                          <span className="text-neutral-400 block mb-1">Email</span>
+                          <span className="text-neutral-400 block mb-1"><EditableContent contentKey="bookings-manager-email" fallback="Email" /></span>
                           <p className="font-medium text-white break-all">{booking.user_email || booking.guest_email || <span className="italic text-neutral-500">Ingen email</span>}</p>
                         </div>
                         <div className="col-span-2">
-                          <span className="text-neutral-400 block mb-1">Adresse</span>
+                          <span className="text-neutral-400 block mb-1"><EditableContent contentKey="bookings-manager-adresse" fallback="Adresse" /></span>
                           <p className="text-sm text-neutral-300">{booking.address}</p>
                         </div>
                         {booking.include_editing && (
@@ -1693,24 +1693,24 @@ const BookingsManager: React.FC = () => {
                       <div className="flex items-start">
                         <Info size={20} className="text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-neutral-300">
-                          <strong className="text-blue-400 block mb-2">📋 Hvad sker der når du gennemfører:</strong>
+                          <strong className="text-blue-400 block mb-2"><EditableContent contentKey="bookings-manager-hvad-sker-der-naar-du" fallback="📋 Hvad sker der når du gennemfører:" /></strong>
                           <ul className="space-y-1.5 list-none">
                             <li className="flex items-start">
                               <span className="text-blue-400 mr-2">✓</span>
-                              <span>Bookingen opdateres med dato og tidspunkt</span>
+                              <span><EditableContent contentKey="bookings-manager-bookingen-opdateres-med-dato-og" fallback="Bookingen opdateres med dato og tidspunkt" /></span>
                             </li>
                             <li className="flex items-start">
                               <span className="text-blue-400 mr-2">✓</span>
-                              <span>Mode ændres fra "smart" til "normal"</span>
+                              <span><EditableContent contentKey="bookings-manager-mode-aendres-fra-smart-til" fallback="Mode ændres fra &quot;smart&quot; til &quot;normal&quot;" /></span>
                             </li>
                             <li className="flex items-start">
                               <span className="text-blue-400 mr-2">✓</span>
-                              <span>Bekræftelses-email sendes til kunden</span>
+                              <span><EditableContent contentKey="bookings-manager-bekraeftelses-email-sendes-til-kunden" fallback="Bekræftelses-email sendes til kunden" /></span>
                             </li>
                             {booking.payment_status === 'awaiting_payment' && (
                               <li className="flex items-start">
                                 <span className="text-warning mr-2">⚠</span>
-                                <span className="text-warning">Kunden kan derefter gennemføre betaling</span>
+                                <span className="text-warning"><EditableContent contentKey="bookings-manager-kunden-kan-derefter-gennemfoere-betaling" fallback="Kunden kan derefter gennemføre betaling" /></span>
                               </li>
                             )}
                           </ul>
@@ -1976,9 +1976,9 @@ const BookingsManager: React.FC = () => {
                             ) : (
                               <>
                                 <Cloud size={32} className="mx-auto mb-2 text-green-400" />
-                                <p className="text-sm text-neutral-300 mb-1">Klik for at uploade til Gofile</p>
-                                <p className="text-xs text-neutral-500">Gratis • Ubegrænset størrelse</p>
-                                <p className="text-xs text-neutral-500">.zip, .rar, .7z</p>
+                                <p className="text-sm text-neutral-300 mb-1"><EditableContent contentKey="bookings-manager-klik-for-at-uploade-til" fallback="Klik for at uploade til Gofile" /></p>
+                                <p className="text-xs text-neutral-500"><EditableContent contentKey="bookings-manager-gratis-ubegraenset-stoerrelse" fallback="Gratis • Ubegrænset størrelse" /></p>
+                                <p className="text-xs text-neutral-500"><EditableContent contentKey="bookings-manager-zip-rar-7z" fallback=".zip, .rar, .7z" /></p>
                               </>
                             )}
                           </label>

@@ -267,7 +267,7 @@ const NewsletterManager: React.FC = () => {
           }`}
         >
           <Send size={20} />
-          <span>Send Nyhedsbrev</span>
+          <span><EditableContent contentKey="newsletter-manager-send-nyhedsbrev" fallback="Send Nyhedsbrev" /></span>
         </button>
         <button
           onClick={() => setActiveTab('templates')}
@@ -278,7 +278,7 @@ const NewsletterManager: React.FC = () => {
           }`}
         >
           <FileText size={20} />
-          <span>Administrer Skabeloner</span>
+          <span><EditableContent contentKey="newsletter-manager-administrer-skabeloner" fallback="Administrer Skabeloner" /></span>
         </button>
       </div>
 
@@ -539,7 +539,7 @@ const NewsletterManager: React.FC = () => {
                 className="btn-primary flex items-center space-x-2"
               >
                 <Plus size={20} />
-                <span>Opret Skabelon</span>
+                <span><EditableContent contentKey="newsletter-manager-opret-skabelon" fallback="Opret Skabelon" /></span>
               </button>
             )}
           </div>
@@ -557,14 +557,14 @@ const NewsletterManager: React.FC = () => {
                     className="btn-primary flex items-center space-x-2"
                   >
                     <Save size={16} />
-                    <span>Gem</span>
+                    <span><EditableContent contentKey="newsletter-manager-gem" fallback="Gem" /></span>
                   </button>
                   <button
                     onClick={handleCancelEdit}
                     className="btn-secondary flex items-center space-x-2"
                   >
                     <X size={16} />
-                    <span>Annuller</span>
+                    <span><EditableContent contentKey="newsletter-manager-annuller" fallback="Annuller" /></span>
                   </button>
                 </div>
               </div>
@@ -573,7 +573,7 @@ const NewsletterManager: React.FC = () => {
                 {/* Template Content */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Skabelon Navn</label>
+                    <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-skabelon-navn" fallback="Skabelon Navn" /></label>
                     <input
                       type="text"
                       value={templateForm.name}
@@ -585,7 +585,7 @@ const NewsletterManager: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Emne</label>
+                    <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-emne" fallback="Emne" /></label>
                     <input
                       type="text"
                       value={templateForm.subject}
@@ -596,7 +596,7 @@ const NewsletterManager: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Overskrift</label>
+                    <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-overskrift" fallback="Overskrift" /></label>
                     <input
                       type="text"
                       value={templateForm.header}
@@ -607,7 +607,7 @@ const NewsletterManager: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Indhold</label>
+                    <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-indhold" fallback="Indhold" /></label>
                     <textarea
                       value={templateForm.body}
                       onChange={(e) => setTemplateForm(prev => ({ ...prev, body: e.target.value }))}
@@ -618,7 +618,7 @@ const NewsletterManager: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Bundtekst</label>
+                    <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-bundtekst" fallback="Bundtekst" /></label>
                     <textarea
                       value={templateForm.footer}
                       onChange={(e) => setTemplateForm(prev => ({ ...prev, footer: e.target.value }))}
@@ -631,11 +631,11 @@ const NewsletterManager: React.FC = () => {
 
                 {/* Color Settings */}
                 <div className="space-y-4">
-                  <h5 className="font-medium">Farveindstillinger</h5>
+                  <h5 className="font-medium"><EditableContent contentKey="newsletter-manager-farveindstillinger" fallback="Farveindstillinger" /></h5>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">Primær Farve</label>
+                      <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-primaer-farve" fallback="Primær Farve" /></label>
                       <div className="flex items-center space-x-2">
                         <input
                           type="color"
@@ -653,7 +653,7 @@ const NewsletterManager: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Sekundær Farve</label>
+                      <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-sekundaer-farve" fallback="Sekundær Farve" /></label>
                       <div className="flex items-center space-x-2">
                         <input
                           type="color"
@@ -671,7 +671,7 @@ const NewsletterManager: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Baggrund</label>
+                      <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-baggrund" fallback="Baggrund" /></label>
                       <div className="flex items-center space-x-2">
                         <input
                           type="color"
@@ -689,7 +689,7 @@ const NewsletterManager: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Tekst Farve</label>
+                      <label className="block text-sm font-medium mb-2"><EditableContent contentKey="newsletter-manager-tekst-farve" fallback="Tekst Farve" /></label>
                       <div className="flex items-center space-x-2">
                         <input
                           type="color"
@@ -709,7 +709,7 @@ const NewsletterManager: React.FC = () => {
 
                   {/* Preview */}
                   <div className="mt-6">
-                    <h5 className="font-medium mb-2">Forhåndsvisning</h5>
+                    <h5 className="font-medium mb-2"><EditableContent contentKey="newsletter-manager-forhaandsvisning" fallback="Forhåndsvisning" /></h5>
                     <div 
                       className="border rounded-lg p-4 text-sm"
                       style={{ 

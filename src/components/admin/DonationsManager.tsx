@@ -4,6 +4,7 @@ import { DonationLink } from '../../types/index';
 import { Copy, Trash2, ToggleRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generateSlug, generateUniqueSlug } from '../../utils/slug';
+import EditableContent from '../EditableContent';
 
 const DonationsManager: React.FC = () => {
   const [donationLinks, setDonationLinks] = useState<DonationLink[]>([]);
@@ -142,7 +143,7 @@ const DonationsManager: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Donationslinks</h2>
+        <h2 className="text-2xl font-bold"><EditableContent contentKey="donations-manager-donationslinks" fallback="Donationslinks" /></h2>
         <button
           onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -154,7 +155,7 @@ const DonationsManager: React.FC = () => {
       {showForm && (
         <form onSubmit={handleCreateLink} className="bg-neutral-700/30 rounded-lg p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Titel</label>
+            <label className="block text-sm font-medium mb-2"><EditableContent contentKey="donations-manager-titel" fallback="Titel" /></label>
             <input
               type="text"
               value={title}
@@ -164,7 +165,7 @@ const DonationsManager: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Beskrivelse</label>
+            <label className="block text-sm font-medium mb-2"><EditableContent contentKey="donations-manager-beskrivelse" fallback="Beskrivelse" /></label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
