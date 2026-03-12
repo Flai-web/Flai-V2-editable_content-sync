@@ -22,11 +22,20 @@ interface DeployResult {
   message?: string;
 }
 
+interface JsxError {
+  file: string;
+  line: number;
+  text: string;
+  issue: string;
+  autoFixed: boolean;
+}
+
 interface AddEditableResult {
   scannedFiles: number;
   modifiedFiles: string[];
   addedKeys: Array<{ key: string; fallback: string; file: string }>;
   skippedFiles: string[];
+  jsxErrors: JsxError[];
   commitSha: string | null;
   commitUrl: string | null;
   errors: string[];
@@ -65,6 +74,9 @@ const ROUTES: Array<{ url: string; label: string; group: string }> = [
   { url: '/email-confirmed', label: 'Email bekræftet',      group: 'Konto' },
   // Admin
   { url: '/admin',           label: 'Admin',                group: 'Admin' },
+  // Layout — global components (not tied to any single page)
+  { url: '__navbar__',       label: 'NavBar',               group: 'Layout' },
+  { url: '__footer__',       label: 'Footer',               group: 'Layout' },
 ];
 
 function formatMs(ms: number): string {
@@ -156,8 +168,8 @@ const UrlPickerModal: React.FC<{
           <p className="text-xs text-blue-300">
             For hver URL scannes sidens fil <span className="text-blue-200 font-medium">og alle importerede komponenter</span> rekursivt.
             Konverterer automatisk: bare JSX-tekst, <code className="bg-neutral-800 px-1 rounded">{'{"streng"}'}</code>,{' '}
-            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald, og <code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> i objekt-arrays (faner, menuer m.m.).
-            NavBar og Footer inkluderes altid automatisk.
+            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald og <code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> i objekt-arrays.
+            Vælg <span className="text-blue-200 font-medium">Layout</span> for NavBar/Footer — de inkluderes <em>kun</em> når du vælger dem.
           </p>
         </div>
 
@@ -315,6 +327,36 @@ const AddResultPanel: React.FC<{ result: AddEditableResult }> = ({ result }) => 
             <TagList items={result.modifiedFiles} color="blue" mono />
           </Collapsible>
         )}
+        {result.jsxErrors && result.jsxErrors.length > 0 && (
+          <Collapsible
+            title={`JSX-fejl fundet: ${result.jsxErrors.length} (${result.jsxErrors.filter(e => e.autoFixed).length} auto-rettet)`}
+            color="yellow"
+            open
+            onToggle={() => toggle('jsxErrors')}
+          >
+            <div className="space-y-2">
+              <p className="text-xs text-yellow-400/80 mb-2">
+                Disse tekst-noder var ugyldige JSX-placeringer (fx inde i &lt;option&gt; eller &lt;code&gt;).
+                Auto-rettede noder er rullet tilbage til original tekst.
+              </p>
+              {result.jsxErrors.map((e, i) => (
+                <div key={i} className="bg-neutral-900/60 rounded p-2 space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    {e.autoFixed
+                      ? <CheckCircle size={12} className="text-green-400 shrink-0" />
+                      : <AlertTriangle size={12} className="text-red-400 shrink-0" />}
+                    <span className={`text-xs font-medium ${e.autoFixed ? 'text-green-300' : 'text-red-300'}`}>
+                      {e.autoFixed ? 'Auto-rettet' : 'Kræver manuel ret'} — linje {e.line}
+                    </span>
+                    <span className="text-xs text-neutral-500 font-mono ml-auto truncate max-w-[140px]">{e.file.split('/').pop()}</span>
+                  </div>
+                  <p className="text-xs text-yellow-200/70 font-mono break-all pl-4">{e.issue}</p>
+                  <p className="text-xs text-neutral-500 font-mono truncate pl-4">"{e.text}"</p>
+                </div>
+              ))}
+            </div>
+          </Collapsible>
+        )}
         {result.errors.length > 0 && (
           <Collapsible title={`Fejl (${result.errors.length})`} color="red" open onToggle={() => toggle('errors')}>
             <ul className="space-y-1">{result.errors.map((e, i) => (
@@ -429,7 +471,7 @@ const DeployContentManager: React.FC = () => {
       const res = await fetch(`${base}/functions/v1/add-editable-content-to-github`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ urls }),
+        body: JSON.stringify({ urls, includeLayout: false }),
       });
       const data: AddEditableResult = await res.json();
       setAddResult(data);
@@ -443,7 +485,7 @@ const DeployContentManager: React.FC = () => {
       }
     } catch (err: any) {
       setAddStatus('error');
-      setAddResult({ scannedFiles: 0, modifiedFiles: [], addedKeys: [], skippedFiles: [], commitSha: null, commitUrl: null, errors: [err.message] });
+      setAddResult({ scannedFiles: 0, modifiedFiles: [], addedKeys: [], skippedFiles: [], jsxErrors: [], commitSha: null, commitUrl: null, errors: [err.message] });
       toast.error('Tilføjelse fejlede');
     }
   };
@@ -531,7 +573,7 @@ const DeployContentManager: React.FC = () => {
           Konverterer bare JSX-tekst, <code className="bg-neutral-900 px-1 rounded text-neutral-300">{"streng"}</code>-udtryk,{' '}
           <code className="bg-neutral-900 px-1 rounded text-neutral-300">getContent()</code> kald og objekt-labels (faner m.m.) til{' '}
           <code className="bg-neutral-900 px-1 rounded text-neutral-300">&lt;EditableContent /&gt;</code>.
-          NavBar og Footer er altid inkluderet. Dynamiske udtryk og eksisterende EditableContent berøres ikke.
+          Vælg <span className="text-neutral-200 font-medium">Layout</span> gruppen for NavBar/Footer — de er separate fra sider og inkluderes kun når valgt. Dynamiske udtryk og eksisterende EditableContent berøres ikke.
         </p>
       </div>
 
