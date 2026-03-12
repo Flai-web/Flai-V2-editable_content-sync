@@ -155,8 +155,8 @@ const UrlPickerModal: React.FC<{
           <Info size={15} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-300">
             For hver URL scannes sidens fil <span className="text-blue-200 font-medium">og alle importerede komponenter</span> rekursivt.
-            Hardkodet tekst som <code className="bg-neutral-800 px-1 rounded">&lt;h2&gt;Min Tekst&lt;/h2&gt;</code> erstattes med{' '}
-            <code className="bg-neutral-800 px-1 rounded">&lt;EditableContent … /&gt;</code>.
+            Konverterer automatisk: bare JSX-tekst, <code className="bg-neutral-800 px-1 rounded">{'{"streng"}'}</code>,{' '}
+            <code className="bg-neutral-800 px-1 rounded">getContent(…)</code> kald, og <code className="bg-neutral-800 px-1 rounded">label: 'Tekst'</code> i objekt-arrays (faner, menuer m.m.).
             NavBar og Footer inkluderes altid automatisk.
           </p>
         </div>
@@ -528,7 +528,9 @@ const DeployContentManager: React.FC = () => {
         <Globe size={14} className="text-primary shrink-0 mt-0.5" />
         <p className="text-xs text-neutral-400">
           <span className="text-neutral-200 font-medium">Gør tekst redigerbar</span> — Vælg sider via URL, og backend'en scanner siden og alle importerede komponenter rekursivt.
-          Hardkodet tekst erstattes med <code className="bg-neutral-900 px-1 rounded text-neutral-300">&lt;EditableContent /&gt;</code>.
+          Konverterer bare JSX-tekst, <code className="bg-neutral-900 px-1 rounded text-neutral-300">{"streng"}</code>-udtryk,{' '}
+          <code className="bg-neutral-900 px-1 rounded text-neutral-300">getContent()</code> kald og objekt-labels (faner m.m.) til{' '}
+          <code className="bg-neutral-900 px-1 rounded text-neutral-300">&lt;EditableContent /&gt;</code>.
           NavBar og Footer er altid inkluderet. Dynamiske udtryk og eksisterende EditableContent berøres ikke.
         </p>
       </div>
