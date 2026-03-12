@@ -3,6 +3,7 @@ import { Search, RefreshCw, CheckCircle, XCircle, Database, Zap, AlertTriangle }
 import { syncAllToMeilisearch, getMeilisearchIndexStats } from '../../utils/meilisearchSync';
 import { getMeilisearchHealth } from '../../utils/meilisearch';
 import toast from 'react-hot-toast';
+import EditableContent from '../EditableContent';
 
 interface IndexStat {
   numberOfDocuments: number;
@@ -77,8 +78,8 @@ const MeilisearchManager: React.FC = () => {
             <Search size={20} className="text-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Meilisearch</h2>
-            <p className="text-sm text-neutral-400">Søgeindeks administration</p>
+            <h2 className="text-lg font-semibold"><EditableContent contentKey="meilisearch-manager-meilisearch" fallback="Meilisearch" /></h2>
+            <p className="text-sm text-neutral-400"><EditableContent contentKey="meilisearch-manager-soegeindeks-administration" fallback="Søgeindeks administration" /></p>
           </div>
         </div>
 
@@ -109,7 +110,7 @@ const MeilisearchManager: React.FC = () => {
                   <span className="text-2xl font-bold text-white">
                     {stat?.numberOfDocuments === -1 ? '—' : (stat?.numberOfDocuments ?? 0)}
                   </span>
-                  <span className="text-xs text-neutral-500 mb-0.5">docs</span>
+                  <span className="text-xs text-neutral-500 mb-0.5"><EditableContent contentKey="meilisearch-manager-docs" fallback="docs" /></span>
                 </div>
               )}
             </div>
@@ -189,7 +190,7 @@ const MeilisearchManager: React.FC = () => {
 
       {/* Info box */}
       <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700/50 text-sm text-neutral-400">
-        <p className="font-medium text-neutral-300 mb-1">💡 Automatisk synkronisering</p>
+        <p className="font-medium text-neutral-300 mb-1"><EditableContent contentKey="meilisearch-manager-automatisk-synkronisering" fallback="💡 Automatisk synkronisering" /></p>
         <p>
           Produkter og portfolio opdateres automatisk i Meilisearch via{' '}
           <code className="text-primary bg-primary/10 px-1 rounded">syncProductToMeilisearch()</code> og{' '}

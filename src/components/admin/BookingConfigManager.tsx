@@ -299,7 +299,7 @@ const BookingConfigManager: React.FC = () => {
           }`}
         >
           <Clock size={16} />
-          <span>Ugentlig Tidsplan</span>
+          <span><EditableContent contentKey="booking-config-manager-ugentlig-tidsplan" fallback="Ugentlig Tidsplan" /></span>
         </button>
         <button
           onClick={() => setActiveTab('specific')}
@@ -310,7 +310,7 @@ const BookingConfigManager: React.FC = () => {
           }`}
         >
           <Calendar size={16} />
-          <span>Specifikke Datoer</span>
+          <span><EditableContent contentKey="booking-config-manager-specifikke-datoer" fallback="Specifikke Datoer" /></span>
         </button>
       </div>
 
@@ -330,7 +330,7 @@ const BookingConfigManager: React.FC = () => {
                 className="flex items-center space-x-2 px-4 py-2 bg-neutral-600 text-white rounded-lg hover:bg-neutral-500 transition-colors"
               >
                 <RotateCcw size={16} />
-                <span>Genindlæs</span>
+                <span><EditableContent contentKey="booking-config-manager-genindlaes" fallback="Genindlæs" /></span>
               </button>
             </div>
           </div>
@@ -354,7 +354,7 @@ const BookingConfigManager: React.FC = () => {
                         className="flex items-center space-x-2 px-3 py-1 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors text-sm"
                       >
                         <Plus size={14} />
-                        <span>Tilføj periode</span>
+                        <span><EditableContent contentKey="booking-config-manager-tilfoej-periode" fallback="Tilføj periode" /></span>
                       </button>
                     </div>
 
@@ -364,7 +364,7 @@ const BookingConfigManager: React.FC = () => {
                         <h4 className="text-sm font-medium mb-3">Tilføj ny tidsperiode for {dayLabels[day]}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div>
-                            <label className="block text-xs font-medium mb-1">Start tid</label>
+                            <label className="block text-xs font-medium mb-1"><EditableContent contentKey="booking-config-manager-start-tid" fallback="Start tid" /></label>
                             <input
                               type="time"
                               value={weeklyFormData.startTime}
@@ -373,7 +373,7 @@ const BookingConfigManager: React.FC = () => {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium mb-1">Slut tid</label>
+                            <label className="block text-xs font-medium mb-1"><EditableContent contentKey="booking-config-manager-slut-tid" fallback="Slut tid" /></label>
                             <input
                               type="time"
                               value={weeklyFormData.endTime}
@@ -389,7 +389,7 @@ const BookingConfigManager: React.FC = () => {
                                 onChange={(e) => setWeeklyFormData({ ...weeklyFormData, is_enabled: e.target.checked })}
                                 className="w-3 h-3 text-primary bg-neutral-700 border-neutral-600 rounded focus:ring-primary focus:ring-2"
                               />
-                              <span className="text-xs">Aktiveret</span>
+                              <span className="text-xs"><EditableContent contentKey="booking-config-manager-aktiveret" fallback="Aktiveret" /></span>
                             </label>
                           </div>
                         </div>
@@ -399,7 +399,7 @@ const BookingConfigManager: React.FC = () => {
                             className="flex items-center space-x-1 px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90 transition-colors"
                           >
                             <Save size={12} />
-                            <span>Gem</span>
+                            <span><EditableContent contentKey="booking-config-manager-gem" fallback="Gem" /></span>
                           </button>
                           <button
                             onClick={() => {
@@ -479,7 +479,7 @@ const BookingConfigManager: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold mb-1">Specifikke Dato Overrides</h3>
+              <h3 className="text-lg font-semibold mb-1"><EditableContent contentKey="booking-config-manager-specifikke-dato-overrides" fallback="Specifikke Dato Overrides" /></h3>
               <p className="text-neutral-400 text-sm">
                 Tilsidesæt ugentlig tidsplan for specifikke datoer. Højere prioritet vinder ved konflikter.
               </p>
@@ -489,7 +489,7 @@ const BookingConfigManager: React.FC = () => {
               className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
             >
               <Plus size={20} />
-              <span>Tilføj Override</span>
+              <span><EditableContent contentKey="booking-config-manager-tilfoej-override" fallback="Tilføj Override" /></span>
             </button>
           </div>
 
@@ -497,7 +497,7 @@ const BookingConfigManager: React.FC = () => {
           {showAddForm && (
             <div className="bg-neutral-700/20 rounded-lg p-6 border border-neutral-600">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Tilføj Specifik Dato Override</h3>
+                <h3 className="text-lg font-semibold"><EditableContent contentKey="booking-config-manager-tilfoej-specifik-dato-override" fallback="Tilføj Specifik Dato Override" /></h3>
                 <button
                   onClick={() => setShowAddForm(false)}
                   className="text-neutral-400 hover:text-white"
@@ -509,7 +509,7 @@ const BookingConfigManager: React.FC = () => {
               <form onSubmit={handleSubmitSpecific} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Dato</label>
+                    <label className="block text-sm font-medium mb-2"><EditableContent contentKey="booking-config-manager-dato" fallback="Dato" /></label>
                     <input
                       type="date"
                       value={formData.date}
@@ -520,7 +520,7 @@ const BookingConfigManager: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Prioritet</label>
+                    <label className="block text-sm font-medium mb-2"><EditableContent contentKey="booking-config-manager-prioritet" fallback="Prioritet" /></label>
                     <input
                       type="number"
                       min="1"
@@ -534,7 +534,7 @@ const BookingConfigManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Status</label>
+                  <label className="block text-sm font-medium mb-2"><EditableContent contentKey="booking-config-manager-status" fallback="Status" /></label>
                   <select
                     value={formData.is_enabled.toString()}
                     onChange={(e) => setFormData({ ...formData, is_enabled: e.target.value === 'true' })}

@@ -285,11 +285,11 @@ const CompressionInfoPanel: React.FC<{ isHeroVideo?: boolean }> = ({ isHeroVideo
 const StatusBadge = ({ ok }: { ok: boolean }) =>
   ok ? (
     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-      <CheckCircle size={10} /> <EditableContent contentKey="video-status-live" as="span" fallback="aktiv" />
+      <CheckCircle size={10} /> 'aktiv'
     </span>
   ) : (
     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
-      <AlertCircle size={10} /> <EditableContent contentKey="video-status-error" as="span" fallback="fejl" />
+      <AlertCircle size={10} /> 'fejl'
     </span>
   );
 
@@ -555,7 +555,7 @@ const UploadModal: React.FC<{ onClose: () => void; onCreated: (v: CldVideo) => v
           {isDone && newPublicId && (
             <div className="flex items-center gap-2 text-xs text-neutral-400">
               <EagerBadge publicId={newPublicId} />
-              <span>HLS + MP4 + WebM forberedes på Cloudinary</span>
+              <span><EditableContent contentKey="video-manager-hls-mp4-webm-forberedes-paa" fallback="HLS + MP4 + WebM forberedes på Cloudinary" /></span>
             </div>
           )}
 
@@ -569,7 +569,7 @@ const UploadModal: React.FC<{ onClose: () => void; onCreated: (v: CldVideo) => v
 
         <div className="flex items-center justify-end gap-3 p-5 border-t border-neutral-700">
           <button onClick={() => { abort.current?.abort(); onClose(); }} disabled={isDone} className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors disabled:opacity-40">
-            {isBusy ? <EditableContent contentKey="video-btn-cancel" as="span" fallback="Annuller" /> : <EditableContent contentKey="video-btn-close" as="span" fallback="Luk" />}
+            {isBusy ? 'Annuller' : 'Luk'}
           </button>
           <button onClick={handleUpload} disabled={isBusy || isDone || !videoTitle.trim() || !file}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
@@ -985,7 +985,7 @@ const VideoManager: React.FC = () => {
             <EditableContent contentKey="video-manager-count-label" as="span"
               fallback={videos.length !== 1 ? 'videoer i dit bibliotek' : 'video i dit bibliotek'} />
             <span className="inline-flex items-center gap-1 ml-1 text-xs px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
-              <Zap size={9} /> q_auto · sp_hd · HLS
+              <Zap size={9} /> 'q_auto · sp_hd · HLS'
             </span>
           </p>
         </div>
@@ -1016,7 +1016,7 @@ const VideoManager: React.FC = () => {
         <div className="flex items-center gap-3 bg-error/10 border border-error/30 rounded-xl p-4 text-error">
           <AlertCircle size={18} />
           <div>
-            <p className="font-medium text-sm">API-fejl</p>
+            <p className="font-medium text-sm"><EditableContent contentKey="video-manager-api-fejl" fallback="API-fejl" /></p>
             <p className="text-xs mt-0.5 opacity-80">{error}</p>
           </div>
           <button onClick={fetchVideos} className="ml-auto text-xs underline opacity-80 hover:opacity-100">
