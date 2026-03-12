@@ -249,7 +249,6 @@ const PortfolioManager: React.FC = () => {
 
   // ─── Upload callbacks ─────────────────────────────────────────────────────────
 
-  // ImageUpload calls onImageUploaded once per file (single or each of multi-upload)
   const handleNewBundleImageUploaded = (url: string) => {
     if (!url) return;
     setNewBundle(prev => ({
@@ -355,6 +354,43 @@ const PortfolioManager: React.FC = () => {
 
   const unbundledImages = portfolioImages.filter(img => !img.bundle_id);
 
+  // Stats: label is always () => React.ReactElement so the .map() call is uniform.
+  // key uses a stable id string, never the result of label().
+  const stats: {
+    id: string;
+    label: () => React.ReactElement;
+    value: number;
+    icon: React.ReactElement;
+    cls?: string;
+  }[] = [
+    {
+      id: 'total-billeder',
+      label: () => <EditableContent contentKey="portfolio-manager-total-billeder" fallback="Total Billeder" />,
+      value: portfolioImages.length,
+      icon: <ImageIcon className="text-primary" size={20} />,
+    },
+    {
+      id: 'bundles',
+      label: () => <>Bundles</>,
+      value: bundles.length,
+      icon: <Package className="text-primary" size={20} />,
+    },
+    {
+      id: 'total-likes',
+      label: () => <>Total Likes</>,
+      value: portfolioImages.reduce((s, i) => s + i.likes, 0),
+      icon: <ThumbsUp className="text-success" size={20} />,
+      cls: 'text-success',
+    },
+    {
+      id: 'total-dislikes',
+      label: () => <>Total Dislikes</>,
+      value: portfolioImages.reduce((s, i) => s + i.dislikes, 0),
+      icon: <ThumbsDown className="text-error" size={20} />,
+      cls: 'text-error',
+    },
+  ];
+
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -370,30 +406,25 @@ const PortfolioManager: React.FC = () => {
         />
         <div className="flex space-x-3">
           <button onClick={() => setShowBundleForm(true)} className="btn-secondary flex items-center">
-            <Package size={20} className="mr-2" /> 'Ny Bundle'
+            <Package size={20} className="mr-2" /> Ny Bundle
           </button>
           <button onClick={() => setShowGroupForm(true)} className="btn-secondary flex items-center">
-            <Images size={20} className="mr-2" /> 'Gruppér Billeder'
+            <Images size={20} className="mr-2" /> Gruppér Billeder
           </button>
           <button onClick={() => setShowAddForm(true)} className="btn-primary flex items-center">
-            <Plus size={20} className="mr-2" /> 'Tilføj Billede'
+            <Plus size={20} className="mr-2" /> Tilføj Billede
           </button>
         </div>
       </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: () => <EditableContent contentKey="portfolio-manager-total-billeder" fallback="Total Billeder" />, value: portfolioImages.length, icon: <ImageIcon className="text-primary" size={20} /> },
-          { label: 'Bundles', value: bundles.length, icon: <Package className="text-primary" size={20} /> },
-          { label: 'Total Likes', value: portfolioImages.reduce((s, i) => s + i.likes, 0), icon: <ThumbsUp className="text-success" size={20} />, cls: 'text-success' },
-          { label: 'Total Dislikes', value: portfolioImages.reduce((s, i) => s + i.dislikes, 0), icon: <ThumbsDown className="text-error" size={20} />, cls: 'text-error' },
-        ].map(stat => (
-          <div key={stat.label()} className="bg-neutral-700/20 rounded-lg p-4">
+        {stats.map(stat => (
+          <div key={stat.id} className="bg-neutral-700/20 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-neutral-400 text-sm">{stat.label()}</p>
-                <p className={`text-xl font-bold ${'cls' in stat ? stat.cls : ''}`}>{stat.value}</p>
+                <p className={`text-xl font-bold ${stat.cls ?? ''}`}>{stat.value}</p>
               </div>
               {stat.icon}
             </div>
@@ -673,13 +704,13 @@ const PortfolioManager: React.FC = () => {
                               }}
                               className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded transition-colors text-sm font-medium flex items-center"
                             >
-                              <Plus size={14} className="mr-1" /> 'Tilføj billeder'
+                              <Plus size={14} className="mr-1" /> Tilføj billeder
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDeleteBundle(image.bundle_id!); }}
                               className="px-3 py-1.5 bg-error/10 text-error hover:bg-error hover:text-white rounded transition-colors text-sm font-medium flex items-center"
                             >
-                              <Trash2 size={14} className="mr-1" /> 'Slet Bundle'
+                              <Trash2 size={14} className="mr-1" /> Slet Bundle
                             </button>
                           </div>
                         </div>
@@ -719,10 +750,10 @@ const PortfolioManager: React.FC = () => {
                                 </div>
                                 <div className="flex justify-end space-x-2">
                                   <button onClick={() => setEditingImage(null)} className="btn-secondary text-sm py-1 px-3 flex items-center">
-                                    <X size={14} className="mr-1" /> 'Annuller'
+                                    <X size={14} className="mr-1" /> Annuller
                                   </button>
                                   <button onClick={handleUpdateImage} className="btn-primary text-sm py-1 px-3 flex items-center">
-                                    <Save size={14} className="mr-1" /> 'Gem'
+                                    <Save size={14} className="mr-1" /> Gem
                                   </button>
                                 </div>
                               </div>
