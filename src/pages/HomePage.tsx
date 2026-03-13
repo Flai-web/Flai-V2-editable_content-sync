@@ -20,9 +20,9 @@ const HomePage: React.FC = () => {
   const contactPhone = getContent('contact-phone', "+45 27 29 21 99");
 
   // Pass the fallback URL directly so HeroVideoSection renders on frame 1.
-  // heroPreload.ts already fetched the real URL from the DB before React loaded ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ
+  // heroPreload.ts already fetched the real URL from the DB before React loaded →
   // the videoUrl prop here is only used as a fallback if heroPreload failed.
-  // Do NOT use getContent() here ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ it returns '' until isSiteContentLoaded,
+  // Do NOT use getContent() here → it returns '' until isSiteContentLoaded,
   // which would delay HeroVideoSection mounting by 300-500ms.
   const heroVideoUrl = '';
 
@@ -77,12 +77,13 @@ const HomePage: React.FC = () => {
       </HeroVideoSection>
 
       {homeSections.filter(s => s.is_active).map((section, index) => (
-        <section key={section.id} className="py-20 bg-neutral-800">
-          <div className="container">
+        <section
+          key={section.id}
+          className={`py-20 bg-neutral-800 ${section.section_type === 'code' ? 'px-0' : ''}`}
+        >
+          <div className={section.section_type === 'code' ? 'w-full' : 'container'}>
             {section.section_type === 'code' ? (
-              <div className="max-w-6xl mx-auto">
-                <CodeProjectRenderer files={section.code_files || []} />
-              </div>
+              <CodeProjectRenderer files={section.code_files || []} />
             ) : (
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-12 items-center ${index % 2 === 1 ? 'md:grid-flow-col-dense' : ''}`}>
                 <div className={index % 2 === 1 ? 'md:order-2' : ''}>
@@ -108,7 +109,7 @@ const HomePage: React.FC = () => {
                 <ul className="space-y-4 text-neutral-300">
                   <li className="flex items-center"><Video className="text-primary mr-3" size={24} /><EditableContent contentKey="drone-feature-video" fallback="4K/60fps videooptagelse" /></li>
                   <li className="flex items-center"><Camera className="text-primary mr-3" size={24} /><EditableContent contentKey="drone-feature-photo" fallback="48MP stillbilleder" /></li>
-                  <li className="flex items-center"><MapPin className="text-primary mr-3" size={24} /><EditableContent contentKey="drone-feature-coverage" fallback="DÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¦kker hele omrÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¥der i Danmark" /></li>
+                  <li className="flex items-center"><MapPin className="text-primary mr-3" size={24} /><EditableContent contentKey="drone-feature-coverage" fallback="Dækker hele områder i Danmark" /></li>
                 </ul>
               </div>
               <div className="relative">
