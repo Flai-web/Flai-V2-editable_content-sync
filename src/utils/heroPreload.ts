@@ -1,83 +1,82 @@
 /**
  * heroPreload.ts
  *
- * ─── Root cause of all 404 errors ────────────────────────────────────────────
+ * ─── Dynamic folder mode ──────────────────────────────────────────────────────
+ * Account created after June 2024 → dynamic folder mode.
+ * asset_folder ('Herovideo') is display-only. The upload API returns a bare
+ * public_id ('herovideo') with NO folder prefix. Delivery URLs use bare id.
  *
- * This Cloudinary account was created after June 4, 2024 and therefore uses
- * DYNAMIC FOLDER MODE. In dynamic folder mode, the asset_folder ('Herovideo')
- * is completely decoupled from the public_id and the delivery URL.
+ * ─── Performance: MP4 first, HLS as enhancement ───────────────────────────────
+ * sp_auto generates the HLS manifest on first request (on-demand transcoding).
+ * For a 33 MB MOV this means the browser stalls waiting for Cloudinary to
+ * transcode before even the first segment can be fetched — causing slow starts.
  *
- * Uploading with:
- *   asset_folder = 'Herovideo'
- *   public_id    = 'herovideo'
+ * Fix: treat MP4 as the primary source and load HLS only as a progressive
+ * enhancement once we know the manifest is available. The MP4 is derived
+ * synchronously and plays immediately. HLS.js is still used where supported
+ * because it gives adaptive bitrate, but we fall back to MP4 instantly if the
+ * manifest is not ready (404/error on first load).
  *
- * Results in an upload response with:
- *   public_id = 'herovideo'   ← NOT 'Herovideo/herovideo'
+ * ─── Poster cache busting ─────────────────────────────────────────────────────
+ * The browser has two separate caches for images:
+ *   1. HTTP cache  — controlled by Cache-Control headers
+ *   2. Decoded image memory cache — keyed on the exact src URL string
  *
- * The delivery URL is therefore:
- *   https://res.cloudinary.com/dq6jxbyrg/video/upload/...herovideo.m3u8
- *                                                                ↑ no folder prefix
+ * fetch({ cache: 'reload' }) only refreshes the HTTP cache. The <img> element
+ * continues reading from the decoded image memory cache if the src URL is
+ * unchanged — so the old poster stays visible even after the fetch completes.
  *
- * Previous code assumed fixed folder mode behaviour where the folder is
- * prepended to the public_id. That assumption was wrong and caused every
- * single delivery URL to 404.
- *
- * ─── Additional URL bugs fixed ───────────────────────────────────────────────
- *
- * BUG 2 — dl_auto is not a valid Cloudinary transformation → 400 on MP4 URL
- *   Fixed: MP4 URL uses vc_h264/f_mp4/q_auto:good — explicit and valid.
- *
- * BUG 3 — sp_auto chains q_auto → invalid, sp_auto controls quality internally
- *   Fixed: HLS URL is just sp_auto/<publicId>.m3u8, no extra params.
- *
- * BUG 4 — Poster used f_auto/.webp → 404 until eager processing completes
- *   f_auto/.webp requires a derived asset to already exist. JPEG frames are
- *   synchronously derived from any source format on first request.
- *   Fixed: poster uses f_jpg — always available immediately after upload.
- *
- * BUG 5 — dpr_auto on poster doubles derived asset count needlessly
- *   Removed — responsive srcset with 480w/960w/1920w already handles DPR.
- *
- * ─── Cloudinary URL rules ─────────────────────────────────────────────────────
- * • sp_auto for delivery — works on first request, no pre-generation needed.
- * • sp_hd for eager presets only — requires pre-generation to be complete.
- * • Do NOT chain q_auto after sp_auto — sp_auto controls quality internally.
- * • f_auto is INCOMPATIBLE with sp_auto (sp_auto handles format internally).
- * • Poster frames: use f_jpg — synchronously available, no 404 risk.
+ * Fix: bustHeroCache stores a numeric version stamp in sessionStorage and
+ * appends ?v=<stamp> to all poster URLs. Since HeroVideoSection reads the
+ * stamp from the exported getter, its <img> src changes → forces a new
+ * HTTP request → bypasses the decoded image cache entirely.
  */
 
 const CLOUD = 'dq6jxbyrg'
 
-// Public ID of the hero video.
-//
-// IMPORTANT — DYNAMIC FOLDER MODE:
-// This account uses dynamic folder mode (Cloudinary default since June 2024).
-// In this mode, asset_folder ('Herovideo') is display-only and is NOT part of
-// the public_id or the delivery URL. The public_id returned by the upload API
-// is just 'herovideo' — confirmed by the Cloudinary Media Library UI which
-// shows Public ID: herovideo (without any folder prefix).
+// Bare public_id — dynamic folder mode, no folder prefix in delivery URL.
 const HERO_PUBLIC_ID = 'herovideo'
 
+// ─── Cache-bust version stamp ─────────────────────────────────────────────────
+// Persisted across module re-imports via sessionStorage (survives soft-nav,
+// cleared on tab close). bustHeroCache() increments this so <img> src URLs
+// change and the browser is forced to re-fetch the poster from the CDN.
+
+const STAMP_KEY = 'hero_poster_v'
+
+function readStamp(): number {
+  try { return parseInt(sessionStorage.getItem(STAMP_KEY) ?? '0', 10) || 0 }
+  catch { return 0 }
+}
+
+function writeStamp(v: number): void {
+  try { sessionStorage.setItem(STAMP_KEY, String(v)) } catch {}
+}
+
+let _posterStamp = readStamp()
+
+/** Returns the current poster cache-bust stamp. HeroVideoSection reads this. */
+export function getPosterStamp(): number { return _posterStamp }
+
 export interface HeroVideo {
-  public_id: string
-  hlsUrl:    string
-  posterUrl: string
+  public_id:   string
+  hlsUrl:      string
+  mp4Url:      string
+  posterUrl:   string
+  posterStamp: number
 }
 
 // ─── URL builders — single source of truth ────────────────────────────────────
-// ALL files (VideoManager, HeroVideoSection, bustHeroCache) import from here.
-// Preloaded URLs and runtime URLs are always identical → guaranteed cache hit.
 
 export function cloudinaryHlsUrl(publicId: string): string {
-  // sp_auto + .m3u8 — generates adaptive HLS on-demand at the CDN edge.
-  // Works on first request without any eager pre-generation.
-  // Do NOT chain q_auto after sp_auto — sp_auto controls quality internally.
+  // sp_auto: on-demand HLS manifest generation. Used as progressive enhancement
+  // after the MP4 has already started playing.
   return `https://res.cloudinary.com/${CLOUD}/video/upload/sp_auto/${publicId}.m3u8`
 }
 
 export function cloudinaryMp4Url(publicId: string): string {
-  // vc_h264/f_mp4/q_auto:good — explicit codec + container + quality.
-  // dl_auto was invalid and caused 400 errors.
+  // Primary video source — derived synchronously, plays immediately.
+  // vc_h264/f_mp4/q_auto:good: explicit codec+container to avoid ambiguity.
   return `https://res.cloudinary.com/${CLOUD}/video/upload/vc_h264/f_mp4/q_auto:good/${publicId}.mp4`
 }
 
@@ -89,33 +88,30 @@ export function cloudinaryPosterUrl(
   publicId: string,
   width    = 1920,
   quality  = 'good',
+  stamp    = 0,
 ): string {
-  // f_jpg — JPEG poster frames are derived synchronously on first request from
-  // any source format (MOV, MP4, etc.) without needing eager pre-generation.
-  // f_auto/.webp caused 404s until Cloudinary finished async eager processing.
-  // dpr_auto removed — responsive srcset (480w/960w/1920w) already handles DPR.
-  return (
+  // f_jpg — always derived synchronously from any source format, no 404 risk.
+  // ?v=stamp appended when stamp > 0 to bust the browser's decoded image cache.
+  const base =
     `https://res.cloudinary.com/${CLOUD}/video/upload/` +
     `c_fill,g_auto,w_${width},so_0/f_jpg/q_auto:${quality}/${publicId}.jpg`
-  )
+  return stamp > 0 ? `${base}?v=${stamp}` : base
 }
 
 // ─── Mutable singleton ────────────────────────────────────────────────────────
-// Mutable so bustHeroCache() can update it in-place after a new upload.
-// HeroVideoSection reads this via getHeroVideo() on mount.
 
 const heroVideo: HeroVideo = {
-  public_id: HERO_PUBLIC_ID,
-  hlsUrl:    cloudinaryHlsUrl(HERO_PUBLIC_ID),
-  posterUrl: cloudinaryPosterUrl(HERO_PUBLIC_ID, 1920, 'good'),
+  public_id:   HERO_PUBLIC_ID,
+  hlsUrl:      cloudinaryHlsUrl(HERO_PUBLIC_ID),
+  mp4Url:      cloudinaryMp4Url(HERO_PUBLIC_ID),
+  posterUrl:   cloudinaryPosterUrl(HERO_PUBLIC_ID, 1920, 'good', _posterStamp),
+  posterStamp: _posterStamp,
 }
 
 export function getHeroVideo(): HeroVideo            { return heroVideo }
 export function fetchHeroVideo(): Promise<HeroVideo> { return Promise.resolve(heroVideo) }
 
 // ─── Preload hints ────────────────────────────────────────────────────────────
-// heroPreload.ts is imported ONLY by HomePage.tsx — so these DOM mutations
-// never run on /products, /admin, or any other route. Homepage only.
 
 function injectConnectionHints(): void {
   if (typeof document === 'undefined') return
@@ -134,36 +130,31 @@ function injectConnectionHints(): void {
   }
 }
 
-export function injectPreloadHints(publicId = heroVideo.public_id): void {
+export function injectPreloadHints(publicId = heroVideo.public_id, stamp = _posterStamp): void {
   if (typeof document === 'undefined') return
   const head = document.head
 
-  // Remove stale slot tags — no-op on first call, required after a bust
   head.querySelectorAll('link[data-hero-slot]').forEach(el => el.remove())
 
   const frag = document.createDocumentFragment()
 
-  // HLS manifest — crossOrigin property (not setAttribute) ensures CORS mode
-  // matches hls.js fetch() call → guaranteed cache hit, not a miss.
-  const hlsLink = document.createElement('link')
-  hlsLink.rel = 'preload'; hlsLink.as = 'fetch'
-  hlsLink.href = cloudinaryHlsUrl(publicId)
-  hlsLink.crossOrigin = 'anonymous'
-  ;(hlsLink as any).fetchPriority = 'high'
-  hlsLink.dataset.heroSlot = 'hls'
-  frag.appendChild(hlsLink)
+  // MP4 is now the primary source — preload it at high priority so the browser
+  // starts buffering before React even renders HeroVideoSection.
+  const mp4Link = document.createElement('link')
+  mp4Link.rel = 'preload'; mp4Link.as = 'video'
+  mp4Link.href = cloudinaryMp4Url(publicId)
+  ;(mp4Link as any).fetchPriority = 'high'
+  mp4Link.dataset.heroSlot = 'mp4'
+  frag.appendChild(mp4Link)
 
-  // Poster — responsive srcset using .jpg (always available immediately).
-  // href is the 1920w entry so on full-width (sizes="100vw") viewports the
-  // browser picks this entry and the preload is always consumed — eliminating
-  // the "preloaded but not used" warning.
+  // Poster — uses stamp so the preload URL always matches the <img> src URL.
   const posterLink = document.createElement('link')
   posterLink.rel = 'preload'; posterLink.as = 'image'
-  posterLink.href = cloudinaryPosterUrl(publicId, 1920, 'good')
+  posterLink.href = cloudinaryPosterUrl(publicId, 1920, 'good', stamp)
   ;(posterLink as any).imageSrcset = [
-    `${cloudinaryPosterUrl(publicId,  480, 'eco')} 480w`,
-    `${cloudinaryPosterUrl(publicId,  960, 'eco')} 960w`,
-    `${cloudinaryPosterUrl(publicId, 1920, 'good')} 1920w`,
+    `${cloudinaryPosterUrl(publicId,  480, 'eco',  stamp)} 480w`,
+    `${cloudinaryPosterUrl(publicId,  960, 'eco',  stamp)} 960w`,
+    `${cloudinaryPosterUrl(publicId, 1920, 'good', stamp)} 1920w`,
   ].join(', ')
   ;(posterLink as any).imageSizes = '100vw'
   ;(posterLink as any).fetchPriority = 'high'
@@ -178,46 +169,59 @@ export function injectPreloadHints(publicId = heroVideo.public_id): void {
 /**
  * bustHeroCache(publicId)
  *
- * Called by VideoManager after a successful upload/replace, with the
- * public_id returned directly from the Cloudinary upload API response.
+ * Called immediately (synchronously) after a successful upload — does NOT
+ * wait for requestIdleCallback so the UI updates without delay.
  *
- * IMPORTANT: In dynamic folder mode the upload response returns the bare
- * public_id WITHOUT any folder prefix. Always pass result.public_id from
- * the upload response directly — never construct it manually by combining
- * asset_folder + public_id, as that produces the wrong value.
+ * Poster cache strategy:
+ *   Increments the version stamp and appends ?v=<stamp> to all poster URLs.
+ *   Because the src string changes, the browser treats it as a new resource
+ *   and bypasses both the HTTP cache and the decoded image memory cache.
+ *   This is the only reliable way to force <img> to show a new image.
+ *
+ * Video cache strategy:
+ *   Dispatches 'heroVideoChanged' immediately so HeroVideoSection tears down
+ *   the old HLS/MP4 instance and starts fresh with the new publicId. The
+ *   background fetch with cache:'reload' refreshes the HTTP cache for the
+ *   next page load but is not on the critical path.
  */
 export function bustHeroCache(publicId: string = HERO_PUBLIC_ID): void {
   if (typeof window === 'undefined') return
 
-  const run = () => {
+  // 1. Increment stamp — changes all poster src URLs → forces browser re-fetch
+  _posterStamp = Date.now()
+  writeStamp(_posterStamp)
+
+  // 2. Mutate singleton immediately so HeroVideoSection reads new values
+  heroVideo.public_id   = publicId
+  heroVideo.hlsUrl      = cloudinaryHlsUrl(publicId)
+  heroVideo.mp4Url      = cloudinaryMp4Url(publicId)
+  heroVideo.posterUrl   = cloudinaryPosterUrl(publicId, 1920, 'good', _posterStamp)
+  heroVideo.posterStamp = _posterStamp
+
+  // 3. Update preload hints for next navigation
+  injectPreloadHints(publicId, _posterStamp)
+
+  // 4. Tell HeroVideoSection to reload NOW — no idle callback delay
+  window.dispatchEvent(
+    new CustomEvent('heroVideoChanged', { detail: { publicId, stamp: _posterStamp } })
+  )
+
+  // 5. Background: refresh HTTP cache so CDN serves fresh bytes on next hard load.
+  //    Runs in rIC so it has zero impact on the UI update above.
+  const warmCache = () => {
     const opts: RequestInit = { method: 'GET', cache: 'reload', credentials: 'omit' }
-
     Promise.allSettled([
-      fetch(cloudinaryHlsUrl(publicId),                  opts),
-      fetch(cloudinaryPosterUrl(publicId,  480, 'eco'),  opts),
-      fetch(cloudinaryPosterUrl(publicId,  960, 'eco'),  opts),
-      fetch(cloudinaryPosterUrl(publicId, 1920, 'good'), opts),
-      fetch(new Request(cloudinaryMp4Url(publicId), {
-        ...opts,
-        headers: { Range: 'bytes=0-0' },
-      })),
-    ]).then(() => {
-      heroVideo.public_id = publicId
-      heroVideo.hlsUrl    = cloudinaryHlsUrl(publicId)
-      heroVideo.posterUrl = cloudinaryPosterUrl(publicId, 1920, 'good')
-
-      injectPreloadHints(publicId)
-
-      window.dispatchEvent(
-        new CustomEvent('heroVideoChanged', { detail: { publicId } })
-      )
-    }).catch(() => { /* non-fatal — CDN TTL handles it */ })
+      fetch(cloudinaryMp4Url(publicId), { ...opts, headers: { Range: 'bytes=0-0' } }),
+      fetch(cloudinaryPosterUrl(publicId,  480, 'eco',  _posterStamp), opts),
+      fetch(cloudinaryPosterUrl(publicId,  960, 'eco',  _posterStamp), opts),
+      fetch(cloudinaryPosterUrl(publicId, 1920, 'good', _posterStamp), opts),
+    ]).catch(() => {})
   }
 
   if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(run, { timeout: 5000 })
+    requestIdleCallback(warmCache, { timeout: 10_000 })
   } else {
-    setTimeout(run, 2000)
+    setTimeout(warmCache, 3000)
   }
 }
 
