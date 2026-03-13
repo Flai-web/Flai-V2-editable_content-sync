@@ -29,22 +29,18 @@ function getConnectionInfo() {
   }
 }
 
-// How long to wait for video to start playing before giving up and showing
-// the poster permanently. Reduced from 8 s — MP4 should start in < 2 s on
-// any decent connection since we preload it. 4 s is generous for slow links.
 const PLAY_TIMEOUT_MS = 4_000
 
-const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', children }) => {
-  const videoRef = useRef<HTMLVideoElement>(null)
+// How many seconds before the end to seek back to 0.
+// Large enough that the browser has buffered the start before we arrive there,
+// small enough that it's imperceptible. 0.3 s is a safe sweet-spot.
+const LOOP_PREROLL_S = 0.3
 
+const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', children }) => {
+  const videoRef      = useRef<HTMLVideoElement>(null)
   const [videoReady,  setVideoReady]  = useState(false)
-  const [loopSeeking, setLoopSeeking] = useState(false)
   const hasStartedRef = useRef(false)
 
-  // publicId + posterStamp — both update on heroVideoChanged so the poster
-  // <img> src changes (stamp appended as ?v=N) and bypasses the browser's
-  // decoded image memory cache. Without a changed src the old poster stays
-  // on screen even after the new image has been fetched.
   const [publicId,    setPublicId]    = useState(() => getHeroVideo().public_id)
   const [posterStamp, setPosterStamp] = useState(() => getHeroVideo().posterStamp)
 
@@ -55,11 +51,8 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
       if (newId && newId !== publicId) {
         hasStartedRef.current = false
         setVideoReady(false)
-        setLoopSeeking(false)
         setPublicId(newId)
       }
-      // Always update stamp — even if publicId didn't change, stamp change
-      // means a new poster was uploaded and must be shown.
       if (typeof stamp === 'number') setPosterStamp(stamp)
     }
     window.addEventListener('heroVideoChanged', handler)
@@ -84,13 +77,6 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
     setVideoReady(true)
   }, [])
 
-  // ─── Video playback effect ──────────────────────────────────────────────────
-  // MP4-only. No HLS upgrade mid-play.
-  //
-  // hls.js attaches to the <video> element and resets its media pipeline when
-  // it takes over from a playing MP4 — this is what caused the 1-2 s black
-  // flash. For a muted looping background video adaptive bitrate adds no value
-  // that justifies that disruption. Single q_auto:good MP4 is the right tool.
   useEffect(() => {
     if (skipVideo) return
     const video = videoRef.current
@@ -98,11 +84,11 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
 
     let destroyed = false
     let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let loopArmed  = false   // true once duration is known and loop logic is active
 
-    const mp4Url = cloudinaryMp4Url(publicId)
-
-    // Reveal poster → video: wait for 2 actual painted frames so there is
-    // no single-frame flash of black between poster fade and video.
+    // ── First-frame detection ────────────────────────────────────────────────
+    // Wait for 2 painted frames before swapping poster → video so there's no
+    // single-frame black flash on reveal.
     const onPlaying = () => {
       if (destroyed) return
       if (timeoutId) { clearTimeout(timeoutId); timeoutId = null }
@@ -123,33 +109,40 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
       }
     }
 
-    const onSeeking = () => {
-      if (destroyed) return
-      if (hasStartedRef.current && video.currentTime < 0.5) setLoopSeeking(true)
-    }
-    const onSeeked = () => {
-      if (destroyed) return
-      if (typeof (video as any).requestVideoFrameCallback === 'function') {
-        ;(video as any).requestVideoFrameCallback(() => {
-          requestAnimationFrame(() => { if (!destroyed) setLoopSeeking(false) })
-        })
-      } else {
-        setLoopSeeking(false)
+    // ── Seamless loop via timeupdate ─────────────────────────────────────────
+    // The native `loop` attribute seeks to 0 after the last frame — the decoder
+    // has no frame ready at that instant → black flash.
+    //
+    // Instead: we watch timeupdate and seek to 0 when we're LOOP_PREROLL_S
+    // seconds from the end. The video is already playing; we just move the
+    // playhead back before it runs out. The browser never stalls, the decoder
+    // always has a frame ready, and the viewer never notices the loop point.
+    const onTimeUpdate = () => {
+      if (destroyed || !loopArmed) return
+      const { duration, currentTime } = video
+      if (!duration || !isFinite(duration)) return
+      if (currentTime >= duration - LOOP_PREROLL_S) {
+        video.currentTime = 0
       }
     }
 
-    video.addEventListener('playing', onPlaying)
-    video.addEventListener('seeking', onSeeking)
-    video.addEventListener('seeked',  onSeeked)
+    // onDurationChange fires once the browser knows the video length.
+    // Only then can we safely arm the loop logic.
+    const onDurationChange = () => {
+      if (video.duration && isFinite(video.duration)) loopArmed = true
+    }
 
-    // Safety valve — if video never fires 'playing' reveal the page anyway.
+    video.addEventListener('playing',        onPlaying)
+    video.addEventListener('timeupdate',     onTimeUpdate)
+    video.addEventListener('durationchange', onDurationChange)
+
+    // Safety valve
     timeoutId = setTimeout(() => { if (!destroyed) markReady() }, PLAY_TIMEOUT_MS)
 
-    video.src = mp4Url
+    video.src = cloudinaryMp4Url(publicId)
     video.load()
     video.play().catch(() => {
       if (destroyed) return
-      // Autoplay policy blocked — retry on first user gesture.
       const retry = () => {
         video.play().catch(() => {})
         document.removeEventListener('touchstart', retry)
@@ -162,17 +155,15 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
     return () => {
       destroyed = true
       if (timeoutId) clearTimeout(timeoutId)
-      video.removeEventListener('playing', onPlaying)
-      video.removeEventListener('seeking', onSeeking)
-      video.removeEventListener('seeked',  onSeeked)
+      video.removeEventListener('playing',        onPlaying)
+      video.removeEventListener('timeupdate',     onTimeUpdate)
+      video.removeEventListener('durationchange', onDurationChange)
       video.pause()
       video.removeAttribute('src')
       video.load()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skipVideo, markReady, publicId])
-
-  const showPoster = !videoReady || loopSeeking
 
   return (
     <section
@@ -185,7 +176,6 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
           ref={videoRef}
           autoPlay
           muted
-          loop
           playsInline
           {...({ 'webkit-playsinline': 'true', playsinline: 'true' } as any)}
           preload="auto"
@@ -198,14 +188,11 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
             objectPosition: 'center',
             zIndex:         0,
             display:        'block',
-            visibility:     showPoster ? 'hidden' : 'visible',
+            visibility:     videoReady ? 'visible' : 'hidden',
           }}
         />
       )}
 
-      {/* key includes posterStamp — forces React to remount the <img> element
-          when the stamp changes, guaranteeing the browser issues a new request
-          even if the decoded image memory cache has the old URL cached. */}
       <img
         key={`poster-${publicId}-${posterStamp}`}
         src={POSTER_1920}
@@ -224,7 +211,7 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
           objectPosition: 'center',
           zIndex:         1,
           pointerEvents:  'none',
-          opacity:        showPoster ? 1 : 0,
+          opacity:        videoReady ? 0 : 1,
           transition:     'opacity 0.3s ease',
         }}
       />
