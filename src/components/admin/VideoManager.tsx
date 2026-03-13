@@ -1,21 +1,28 @@
 /**
  * VideoManager — 100% Cloudinary, no external video API
  *
- * Compression strategy (all server-side via Cloudinary):
+ * ─── DYNAMIC FOLDER MODE (accounts created after June 4, 2024) ────────────────
+ * This account uses Cloudinary dynamic folder mode. The asset_folder parameter
+ * ('Herovideo') controls the Media Library display folder only — it is NOT part
+ * of the public_id or the delivery URL. The upload API response always returns
+ * the bare public_id (e.g. 'herovideo'), never a folder-prefixed path.
+ * Delivery URLs therefore use just the bare public_id, e.g.:
+ *   https://res.cloudinary.com/dq6jxbyrg/video/upload/sp_auto/herovideo.m3u8
+ *
+ * ─── Compression strategy ─────────────────────────────────────────────────────
  *
  *  1. UPLOAD PRESET (Cloudinary Dashboard → Settings → Upload → Herovideo):
  *       `eager`, `eager_async` and `overwrite` are NOT allowed in unsigned
  *       upload requests — configure them once in the preset's Transform tab:
- *         Eager: sp_hd/f_m3u8          ← HLS (requires pre-generation)
+ *         Eager: sp_hd/f_m3u8         ← HLS (pre-generation for repeat visitors)
  *         Eager: f_mp4,q_auto:good,vc_h264
  *         Eager: f_webm,q_auto:good,vc_vp9
  *         Eager: f_jpg,q_auto:good,so_0,w_1280
  *         eager_async: true   ← prevents timeouts on large videos
  *         overwrite:   true   ← required for the replace flow
  *
- *       NOTE: delivery URLs use sp_auto (on-demand, no pre-generation needed).
+ *       Delivery URLs use sp_auto (works on first request without pre-generation).
  *       Eager uses sp_hd so repeat visitors get a pre-cached multi-bitrate HLS.
- *       First visitor after upload always works regardless — sp_auto never 404s.
  *
  *  2. POST-UPLOAD EXPLICIT via Supabase edge function (signed):
  *     After each upload the client fires POST ?eager=1&id=<public_id> to the
@@ -72,10 +79,6 @@ const CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
 //       • eager_async: true  (set in preset so large videos don't time out)
 //       • overwrite: true    (needed for replace flow)
 //
-//     NOTE: delivery URLs (cloudinaryHlsUrl) use sp_auto which works on-demand.
-//     Eager uses sp_hd/f_m3u8 to pre-generate a multi-bitrate HLS manifest so
-//     repeat visitors don't trigger on-demand generation on the CDN edge.
-//
 //  B) POST-UPLOAD EXPLICIT CALL via Supabase edge function (signed):
 //     After a successful upload the client fires a POST ?eager=1&id=<public_id>
 //     to the edge function which calls Cloudinary's signed `explicit` endpoint
@@ -85,18 +88,14 @@ const CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
 // The EAGER_ALL string below is used by the edge function's explicit call.
 
 const EAGER_ALL = [
-  // HLS adaptive stream — sp_hd pre-generates all bitrate rungs server-side.
-  // sp_hd is correct here (eager context) — unlike delivery URLs which use
-  // sp_auto (on-demand). The .m3u8 extension must be included in the raw
-  // transformation string for Cloudinary to recognise this as an HLS output.
+  // HLS — sp_hd pre-generates multi-bitrate rungs server-side.
+  // Use sp_hd here (eager context) NOT sp_auto — sp_auto is for delivery URLs.
   'sp_hd/f_m3u8',
-  // MP4 H.264 — explicit codec/format for reliable cross-browser fallback.
-  // Cloudinary requires params in alphabetical order within a component.
+  // MP4 H.264 — params alphabetized per Cloudinary requirement
   'f_mp4,q_auto:good,vc_h264',
   // WebM VP9 — best compression for Chrome/Firefox
   'f_webm,q_auto:good,vc_vp9',
-  // Poster frame — first frame (so_0), 1280 px wide JPEG.
-  // f_jpg is always derived synchronously — no 404 risk unlike f_auto/.webp.
+  // Poster — JPEG always derived synchronously (no 404 risk unlike f_auto/.webp)
   'f_jpg,q_auto:good,so_0,w_1280',
 ].join('|');
 
@@ -609,6 +608,8 @@ const ReplaceVideoModal: React.FC<{
     const savedPublicId = video.public_id;
     const savedCaption  = title(video);
     const savedAlt      = video.context?.custom?.alt ?? '';
+    // In dynamic folder mode public_id is already bare (no folder prefix).
+    // The replace is a no-op but kept as a safety guard.
     const savedBareId   = savedPublicId.replace(/^.*\//, '');
 
     try {
