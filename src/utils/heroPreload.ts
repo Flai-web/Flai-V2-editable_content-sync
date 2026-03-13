@@ -1,58 +1,62 @@
 /**
  * heroPreload.ts
  *
- * ─── Bugs fixed ───────────────────────────────────────────────────────────────
+ * ─── Root cause of all 404 errors ────────────────────────────────────────────
  *
- * BUG 1 — Wrong public_id → video never played
- *   Cloudinary prepends the asset_folder to the public_id on upload.
- *   Uploading to asset_folder='Herovideo' with id='herovideo' produces
- *   result.public_id = 'Herovideo/herovideo', not 'herovideo'.
- *   Every URL was wrong. Fixed: default is now 'Herovideo/herovideo'.
+ * This Cloudinary account was created after June 4, 2024 and therefore uses
+ * DYNAMIC FOLDER MODE. In dynamic folder mode, the asset_folder ('Herovideo')
+ * is completely decoupled from the public_id and the delivery URL.
  *
- * BUG 2 — URL mismatch between VideoManager and heroPreload → cache miss
- *   VideoManager had its own private URL builders (sp_hd/f_m3u8, f_jpg).
- *   heroPreload used different ones (sp_auto/q_auto:good, f_auto/.webp).
- *   hls.js fetched the manifest at a URL that was never preloaded → miss.
- *   Fixed: VideoManager now imports all builders from here. One source of truth.
+ * Uploading with:
+ *   asset_folder = 'Herovideo'
+ *   public_id    = 'herovideo'
  *
- * BUG 3 — Frozen singleton → cache bust never updated the playing video
- *   getHeroVideo() returned a frozen module-level object. bustHeroCache(newId)
- *   had no way to update it, so HeroVideoSection kept the old URL forever.
- *   Fixed: singleton is mutable. bustHeroCache() mutates it, then dispatches
- *   'heroVideoChanged' so HeroVideoSection reloads with the new source.
+ * Results in an upload response with:
+ *   public_id = 'herovideo'   ← NOT 'Herovideo/herovideo'
  *
- * BUG 4 — sp_hd requires eager pre-generation → 404 until Cloudinary finishes
- *   sp_hd (named streaming profile) only works once the eager transformation is
- *   fully generated server-side — which is async and takes minutes for large
- *   videos. Requests before it's ready return 404.
- *   sp_auto with .m3u8 extension works on-demand: Cloudinary generates the
- *   manifest at the CDN edge on first request. No pre-generation needed.
- *   Fixed: HLS delivery uses sp_auto. Eager preset uses sp_hd for pre-warming
- *   so repeat visitors get a cached, multi-bitrate manifest — but the first
- *   visitor after upload is never blocked by a 404.
+ * The delivery URL is therefore:
+ *   https://res.cloudinary.com/dq6jxbyrg/video/upload/...herovideo.m3u8
+ *                                                                ↑ no folder prefix
  *
- * BUG 5 — Poster f_auto/.webp → 404 + "preloaded but not used" warning
- *   f_auto with .webp extension requires Cloudinary to have already derived a
- *   .webp version. If the eager transformation hasn't completed yet the URL 404s.
- *   Additionally the preload hint injected .webp but when the browser chose a
- *   different srcset entry the preload was wasted — triggering a browser warning.
- *   Fixed: poster uses f_jpg — JPEG frames are derived synchronously from any
- *   source format on first request with no pre-generation required. Srcset and
- *   preload hints both use .jpg so they always match.
+ * Previous code assumed fixed folder mode behaviour where the folder is
+ * prepended to the public_id. That assumption was wrong and caused every
+ * single delivery URL to 404.
+ *
+ * ─── Additional URL bugs fixed ───────────────────────────────────────────────
+ *
+ * BUG 2 — dl_auto is not a valid Cloudinary transformation → 400 on MP4 URL
+ *   Fixed: MP4 URL uses vc_h264/f_mp4/q_auto:good — explicit and valid.
+ *
+ * BUG 3 — sp_auto chains q_auto → invalid, sp_auto controls quality internally
+ *   Fixed: HLS URL is just sp_auto/<publicId>.m3u8, no extra params.
+ *
+ * BUG 4 — Poster used f_auto/.webp → 404 until eager processing completes
+ *   f_auto/.webp requires a derived asset to already exist. JPEG frames are
+ *   synchronously derived from any source format on first request.
+ *   Fixed: poster uses f_jpg — always available immediately after upload.
+ *
+ * BUG 5 — dpr_auto on poster doubles derived asset count needlessly
+ *   Removed — responsive srcset with 480w/960w/1920w already handles DPR.
  *
  * ─── Cloudinary URL rules ─────────────────────────────────────────────────────
- * • sp_auto for delivery — works on first request without eager pre-generation.
- * • sp_hd for eager presets only — requires pre-generation to be complete first.
- * • q_auto must NOT be chained after sp_auto — sp_auto controls quality itself.
+ * • sp_auto for delivery — works on first request, no pre-generation needed.
+ * • sp_hd for eager presets only — requires pre-generation to be complete.
+ * • Do NOT chain q_auto after sp_auto — sp_auto controls quality internally.
  * • f_auto is INCOMPATIBLE with sp_auto (sp_auto handles format internally).
- * • Poster frames: use f_jpg — always synchronously available, no 404 risk.
+ * • Poster frames: use f_jpg — synchronously available, no 404 risk.
  */
 
 const CLOUD = 'dq6jxbyrg'
 
-// Full Cloudinary public_id including folder.
-// Matches result.public_id from uploading to asset_folder='Herovideo'.
-const HERO_PUBLIC_ID = 'Herovideo/herovideo'
+// Public ID of the hero video.
+//
+// IMPORTANT — DYNAMIC FOLDER MODE:
+// This account uses dynamic folder mode (Cloudinary default since June 2024).
+// In this mode, asset_folder ('Herovideo') is display-only and is NOT part of
+// the public_id or the delivery URL. The public_id returned by the upload API
+// is just 'herovideo' — confirmed by the Cloudinary Media Library UI which
+// shows Public ID: herovideo (without any folder prefix).
+const HERO_PUBLIC_ID = 'herovideo'
 
 export interface HeroVideo {
   public_id: string
@@ -65,16 +69,15 @@ export interface HeroVideo {
 // Preloaded URLs and runtime URLs are always identical → guaranteed cache hit.
 
 export function cloudinaryHlsUrl(publicId: string): string {
-  // sp_auto + .m3u8 — Cloudinary generates the adaptive HLS manifest on-demand
-  // at the CDN edge. Works immediately on first request without eager
-  // pre-generation. Do NOT chain q_auto — sp_auto controls quality internally.
+  // sp_auto + .m3u8 — generates adaptive HLS on-demand at the CDN edge.
+  // Works on first request without any eager pre-generation.
+  // Do NOT chain q_auto after sp_auto — sp_auto controls quality internally.
   return `https://res.cloudinary.com/${CLOUD}/video/upload/sp_auto/${publicId}.m3u8`
 }
 
 export function cloudinaryMp4Url(publicId: string): string {
-  // vc_h264/f_mp4/q_auto:good — explicit codec + format + quality.
-  // dl_auto was not a valid transformation (caused 400). vc_auto with f_auto
-  // is ambiguous when both are chained — explicit params are more reliable.
+  // vc_h264/f_mp4/q_auto:good — explicit codec + container + quality.
+  // dl_auto was invalid and caused 400 errors.
   return `https://res.cloudinary.com/${CLOUD}/video/upload/vc_h264/f_mp4/q_auto:good/${publicId}.mp4`
 }
 
@@ -87,13 +90,10 @@ export function cloudinaryPosterUrl(
   width    = 1920,
   quality  = 'good',
 ): string {
-  // f_jpg — JPEG poster frames are derived synchronously from any source format
-  // (MOV, MP4, etc.) on first request without needing eager pre-generation.
-  // f_auto/.webp caused 404s when the derived webp asset wasn't ready yet,
-  // and triggered "preloaded but not used" warnings when the browser's srcset
-  // negotiation picked a different width/format than what was preloaded.
-  // dpr_auto removed — it doubles derived asset count with minimal visual gain
-  // given that we already provide a responsive srcset with 480w/960w/1920w.
+  // f_jpg — JPEG poster frames are derived synchronously on first request from
+  // any source format (MOV, MP4, etc.) without needing eager pre-generation.
+  // f_auto/.webp caused 404s until Cloudinary finished async eager processing.
+  // dpr_auto removed — responsive srcset (480w/960w/1920w) already handles DPR.
   return (
     `https://res.cloudinary.com/${CLOUD}/video/upload/` +
     `c_fill,g_auto,w_${width},so_0/f_jpg/q_auto:${quality}/${publicId}.jpg`
@@ -153,10 +153,10 @@ export function injectPreloadHints(publicId = heroVideo.public_id): void {
   hlsLink.dataset.heroSlot = 'hls'
   frag.appendChild(hlsLink)
 
-  // Poster — responsive srcset using .jpg (always available, no 404 risk).
-  // href matches the 1920w srcset entry — the largest — so on full-width
-  // viewports (sizes="100vw") the browser picks this entry and the preload
-  // is guaranteed to be used, eliminating the "preloaded but not used" warning.
+  // Poster — responsive srcset using .jpg (always available immediately).
+  // href is the 1920w entry so on full-width (sizes="100vw") viewports the
+  // browser picks this entry and the preload is always consumed — eliminating
+  // the "preloaded but not used" warning.
   const posterLink = document.createElement('link')
   posterLink.rel = 'preload'; posterLink.as = 'image'
   posterLink.href = cloudinaryPosterUrl(publicId, 1920, 'good')
@@ -178,17 +178,13 @@ export function injectPreloadHints(publicId = heroVideo.public_id): void {
 /**
  * bustHeroCache(publicId)
  *
- * Called by VideoManager with result.public_id from Cloudinary after upload.
- * Runs in requestIdleCallback — zero competition with paint or interaction.
+ * Called by VideoManager after a successful upload/replace, with the
+ * public_id returned directly from the Cloudinary upload API response.
  *
- * Sequence:
- *  1. Re-fetch all assets with { cache:'reload' } — no mode:'no-cors' so the
- *     browser actually writes the new bytes back to HTTP cache.
- *  2. Mutate the singleton so getHeroVideo() returns the new publicId.
- *  3. Refresh preload tags so the next homepage visit preloads the right asset.
- *  4. Dispatch 'heroVideoChanged' — HeroVideoSection tears down its HLS
- *     instance and starts a fresh one with the new publicId immediately.
- *     No page reload needed.
+ * IMPORTANT: In dynamic folder mode the upload response returns the bare
+ * public_id WITHOUT any folder prefix. Always pass result.public_id from
+ * the upload response directly — never construct it manually by combining
+ * asset_folder + public_id, as that produces the wrong value.
  */
 export function bustHeroCache(publicId: string = HERO_PUBLIC_ID): void {
   if (typeof window === 'undefined') return
@@ -201,21 +197,17 @@ export function bustHeroCache(publicId: string = HERO_PUBLIC_ID): void {
       fetch(cloudinaryPosterUrl(publicId,  480, 'eco'),  opts),
       fetch(cloudinaryPosterUrl(publicId,  960, 'eco'),  opts),
       fetch(cloudinaryPosterUrl(publicId, 1920, 'good'), opts),
-      // 1-byte range — refreshes the MP4 cache entry without downloading the file
       fetch(new Request(cloudinaryMp4Url(publicId), {
         ...opts,
         headers: { Range: 'bytes=0-0' },
       })),
     ]).then(() => {
-      // Mutate singleton — HeroVideoSection reads this on next render
       heroVideo.public_id = publicId
       heroVideo.hlsUrl    = cloudinaryHlsUrl(publicId)
       heroVideo.posterUrl = cloudinaryPosterUrl(publicId, 1920, 'good')
 
-      // Refresh preload tags for next navigation to '/'
       injectPreloadHints(publicId)
 
-      // Tell the currently-mounted HeroVideoSection to reload now
       window.dispatchEvent(
         new CustomEvent('heroVideoChanged', { detail: { publicId } })
       )
@@ -225,15 +217,13 @@ export function bustHeroCache(publicId: string = HERO_PUBLIC_ID): void {
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(run, { timeout: 5000 })
   } else {
-    setTimeout(run, 2000) // Safari fallback
+    setTimeout(run, 2000)
   }
 }
 
 // ─── Module init ──────────────────────────────────────────────────────────────
-// Fires synchronously when HomePage.tsx imports this module.
-// Never runs on other routes — heroPreload is only imported by HomePage.
 
 if (typeof document !== 'undefined') {
-  injectConnectionHints() // TLS handshake to Cloudinary starts immediately
-  injectPreloadHints()    // poster + HLS manifest queued at fetchpriority=high
+  injectConnectionHints()
+  injectPreloadHints()
 }
