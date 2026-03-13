@@ -6,12 +6,16 @@
  *  1. UPLOAD PRESET (Cloudinary Dashboard → Settings → Upload → Herovideo):
  *       `eager`, `eager_async` and `overwrite` are NOT allowed in unsigned
  *       upload requests — configure them once in the preset's Transform tab:
- *         Eager: sp_hd
+ *         Eager: sp_hd/f_m3u8          ← HLS (requires pre-generation)
  *         Eager: f_mp4,q_auto:good,vc_h264
  *         Eager: f_webm,q_auto:good,vc_vp9
- *         Eager: f_jpg,q_auto,so_0,w_1280
+ *         Eager: f_jpg,q_auto:good,so_0,w_1280
  *         eager_async: true   ← prevents timeouts on large videos
  *         overwrite:   true   ← required for the replace flow
+ *
+ *       NOTE: delivery URLs use sp_auto (on-demand, no pre-generation needed).
+ *       Eager uses sp_hd so repeat visitors get a pre-cached multi-bitrate HLS.
+ *       First visitor after upload always works regardless — sp_auto never 404s.
  *
  *  2. POST-UPLOAD EXPLICIT via Supabase edge function (signed):
  *     After each upload the client fires POST ?eager=1&id=<public_id> to the
@@ -61,12 +65,16 @@ const CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
 //  A) UPLOAD PRESET (Cloudinary Dashboard → Settings → Upload → Herovideo):
 //     Configure these in the preset's Transform tab so they run automatically
 //     on every upload:
-//       • Eager: sp_hd
+//       • Eager: sp_hd/f_m3u8
 //       • Eager: f_mp4,q_auto:good,vc_h264
 //       • Eager: f_webm,q_auto:good,vc_vp9
-//       • Eager: f_jpg,q_auto,so_0,w_1280
+//       • Eager: f_jpg,q_auto:good,so_0,w_1280
 //       • eager_async: true  (set in preset so large videos don't time out)
 //       • overwrite: true    (needed for replace flow)
+//
+//     NOTE: delivery URLs (cloudinaryHlsUrl) use sp_auto which works on-demand.
+//     Eager uses sp_hd/f_m3u8 to pre-generate a multi-bitrate HLS manifest so
+//     repeat visitors don't trigger on-demand generation on the CDN edge.
 //
 //  B) POST-UPLOAD EXPLICIT CALL via Supabase edge function (signed):
 //     After a successful upload the client fires a POST ?eager=1&id=<public_id>
@@ -77,15 +85,19 @@ const CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
 // The EAGER_ALL string below is used by the edge function's explicit call.
 
 const EAGER_ALL = [
-  // HLS adaptive stream — sp_hd generates multiple bitrate rungs automatically
-  // Note: sp_hd handles format internally; no need to chain f_m3u8 separately
-  'sp_hd',
-  // MP4 H.264 — params alphabetized within component per Cloudinary requirement
+  // HLS adaptive stream — sp_hd pre-generates all bitrate rungs server-side.
+  // sp_hd is correct here (eager context) — unlike delivery URLs which use
+  // sp_auto (on-demand). The .m3u8 extension must be included in the raw
+  // transformation string for Cloudinary to recognise this as an HLS output.
+  'sp_hd/f_m3u8',
+  // MP4 H.264 — explicit codec/format for reliable cross-browser fallback.
+  // Cloudinary requires params in alphabetical order within a component.
   'f_mp4,q_auto:good,vc_h264',
   // WebM VP9 — best compression for Chrome/Firefox
   'f_webm,q_auto:good,vc_vp9',
-  // Poster frame — first frame, 1280 px wide JPEG
-  'f_jpg,q_auto,so_0,w_1280',
+  // Poster frame — first frame (so_0), 1280 px wide JPEG.
+  // f_jpg is always derived synchronously — no 404 risk unlike f_auto/.webp.
+  'f_jpg,q_auto:good,so_0,w_1280',
 ].join('|');
 
 // ─── Optimised delivery URL builders ──────────────────────────────────────────
