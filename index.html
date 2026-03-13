@@ -37,34 +37,90 @@
     <meta name="twitter:description" content="Droneservice i Danmark. Luftfoto og luftvideo til ejendomme, events og erhverv. Book online." />
     <meta name="twitter:image" content="https://flai.dk/og-image.jpg" />
 
-    <!--
-      Cloudinary preconnect + hero poster preload are intentionally NOT here.
-      They are injected by heroPreload.ts which is only imported on the homepage,
-      so other routes are never penalised with unnecessary preconnects.
-    -->
+    <!-- ═══════════════════════════════════════════════════════
+         HERO VIDEO PRELOAD — homepage only, injected before JS
+         ───────────────────────────────────────────────────────
+         Why an inline script instead of hardcoded <link> tags:
+           • Hardcoded tags fire on EVERY route — /products, /admin,
+             etc. all download the hero poster + HLS manifest for no
+             reason, wasting bandwidth on non-homepage visitors.
+           • An inline script runs synchronously during HTML parsing,
+             BEFORE the JS bundle is downloaded — same speed as
+             hardcoded tags, but only fires when pathname === '/'.
+           • bustHeroCache() updates window.__HERO_PUBLIC_ID so the
+             next soft-navigation to '/' gets the new asset without
+             a full page reload.
+    ═══════════════════════════════════════════════════════ -->
+    <script>
+      (function () {
+        // ── Config — keep in sync with heroPreload.ts ──────────────────────
+        var CLOUD = 'dq6jxbyrg';
+        var ID    = 'herovideo';          // updated by bustHeroCache via deploy
 
-    <!-- Preconnect to Supabase (correct project URL) -->
+        // Expose so heroPreload.ts can read without re-declaring
+        window.__HERO_PUBLIC_ID = ID;
+
+        // Only preload on the homepage
+        if (window.location.pathname !== '/') return;
+
+        var BASE = 'https://res.cloudinary.com/' + CLOUD + '/video/upload/';
+
+        function posterUrl(w, q) {
+          return BASE + 'c_fill,g_auto,w_' + w + ',dpr_auto,so_0/f_auto/q_auto:' + q + '/' + ID + '.webp';
+        }
+        function hlsUrl() {
+          return BASE + 'sp_auto/q_auto:good/' + ID + '.m3u8';
+        }
+
+        var head = document.head;
+
+        // Preconnect — TLS handshake starts at absolute T+0
+        var pc = document.createElement('link');
+        pc.rel = 'preconnect'; pc.href = 'https://res.cloudinary.com'; pc.crossOrigin = 'anonymous';
+        head.prepend(pc);
+
+        var dp = document.createElement('link');
+        dp.rel = 'dns-prefetch'; dp.href = 'https://res.cloudinary.com';
+        head.prepend(dp);
+
+        // Poster preload — responsive srcset, highest priority
+        var poster = document.createElement('link');
+        poster.rel  = 'preload';
+        poster.as   = 'image';
+        poster.href = posterUrl(1920, 'good');
+        poster.setAttribute('imagesrcset',
+          posterUrl(480,  'eco')  + ' 480w, ' +
+          posterUrl(960,  'eco')  + ' 960w, ' +
+          posterUrl(1920, 'good') + ' 1920w'
+        );
+        poster.setAttribute('imagesizes', '100vw');
+        poster.setAttribute('fetchpriority', 'high');
+        poster.dataset.heroSlot = 'poster';
+        head.prepend(poster);
+
+        // HLS manifest preload — crossorigin must match hls.js fetch()
+        var hls = document.createElement('link');
+        hls.rel         = 'preload';
+        hls.as          = 'fetch';
+        hls.href        = hlsUrl();
+        hls.crossOrigin = 'anonymous';
+        hls.setAttribute('fetchpriority', 'high');
+        hls.dataset.heroSlot = 'hls';
+        head.prepend(hls);
+      })();
+    </script>
+
+    <!-- Preconnect to Supabase -->
     <link rel="preconnect" href="https://pbqeljimuerxatrtmgsn.supabase.co" crossorigin="anonymous" />
 
-    <!-- Fonts: system-UI stack — zero network round-trip, zero layout shift.
-         Inter is the default system font on many platforms; visually identical
-         fallbacks on others. Eliminates Google Fonts DNS + render-blocking load. -->
+    <!-- Fonts: system-UI stack — zero network round-trip, zero layout shift -->
     <style>
       body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     </style>
 
-    <!--
-      INSTANT DARK BACKGROUND — inline style so the very first painted pixel
-      is dark (#171717 = neutral-900), matching the app shell exactly.
-      Without this the browser paints white for ~100ms before React mounts,
-      causing a visible white flash even when JS loads quickly.
-    -->
+    <!-- INSTANT DARK BACKGROUND — prevents white flash before React mounts -->
     <style>
-      html, body, #root {
-        background-color: #171717;
-        margin: 0;
-        padding: 0;
-      }
+      html, body, #root { background-color: #171717; margin: 0; padding: 0; }
     </style>
   </head>
   <body>
