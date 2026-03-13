@@ -28,11 +28,10 @@ function getConnectionInfo() {
   }
 }
 
-// Start B playing this many seconds before A ends so it's already
-// running when A cuts off. No fade — just an instant swap.
+// How many seconds before the end to start B playing so it's ready for the cut.
 const SWITCH_BEFORE_END_S = 1.5
 
-const VIDEO_STYLE: React.CSSProperties = {
+const FILL_STYLE: React.CSSProperties = {
   position:       'absolute',
   inset:          0,
   width:          '100%',
@@ -46,9 +45,41 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
   const refA = useRef<HTMLVideoElement>(null)
   const refB = useRef<HTMLVideoElement>(null)
 
-  const [active,      setActive]      = useState<'a' | 'b'>('a')
+  // Which video element is currently the visible one
+  const [active, setActive] = useState<'a' | 'b'>('a')
+
+  // videoReady: true once the first real video frame has been painted.
+  // Until then the poster stays on top so there's never a flash of black
+  // or the background colour before the video arrives.
+  const [videoReady, setVideoReady] = useState(false)
+
+  // posterReady: true once the CURRENT stamp poster has finished loading.
+  // Until then we keep the previous (cached) poster visible underneath.
+  // This means: cached poster shows instantly, fresh poster replaces it
+  // silently once it has loaded — user never sees a blank gap.
+  const [posterReady, setPosterReady] = useState(false)
+
   const [publicId,    setPublicId]    = useState(() => getHeroVideo().public_id)
   const [posterStamp, setPosterStamp] = useState(() => getHeroVideo().posterStamp)
+
+  // The "previous" stamp is stamp=0 (no ?v= param) — the version the browser
+  // may have cached from a previous visit. We render it underneath as fallback.
+  const cachedPosterUrl = useMemo(
+    () => cloudinaryPosterUrl(publicId, 1920, 'good', 0),
+    [publicId]
+  )
+
+  // The current stamp poster — may be the same URL if stamp===0
+  const freshPosterUrl  = useMemo(
+    () => cloudinaryPosterUrl(publicId, 1920, 'good', posterStamp),
+    [publicId, posterStamp]
+  )
+  const freshPoster480  = useMemo(() => cloudinaryPosterUrl(publicId,  480, 'eco',  posterStamp), [publicId, posterStamp])
+  const freshPoster960  = useMemo(() => cloudinaryPosterUrl(publicId,  960, 'eco',  posterStamp), [publicId, posterStamp])
+  const freshPosterSrcSet = useMemo(
+    () => `${freshPoster480} 480w, ${freshPoster960} 960w, ${freshPosterUrl} 1920w`,
+    [freshPoster480, freshPoster960, freshPosterUrl]
+  )
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -56,40 +87,62 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
         (e as CustomEvent<{ publicId: string; stamp: number }>).detail ?? {}
       if (newId && newId !== publicId) {
         setActive('a')
+        setVideoReady(false)
+        setPosterReady(false)
         setPublicId(newId)
       }
-      if (typeof stamp === 'number') setPosterStamp(stamp)
+      if (typeof stamp === 'number') {
+        setPosterReady(false) // new stamp = new poster incoming, reset ready state
+        setPosterStamp(stamp)
+      }
     }
     window.addEventListener('heroVideoChanged', handler)
     return () => window.removeEventListener('heroVideoChanged', handler)
   }, [publicId])
-
-  const POSTER_480    = useMemo(() => cloudinaryPosterUrl(publicId,  480, 'eco',  posterStamp), [publicId, posterStamp])
-  const POSTER_960    = useMemo(() => cloudinaryPosterUrl(publicId,  960, 'eco',  posterStamp), [publicId, posterStamp])
-  const POSTER_1920   = useMemo(() => cloudinaryPosterUrl(publicId, 1920, 'good', posterStamp), [publicId, posterStamp])
-  const POSTER_SRCSET = useMemo(
-    () => `${POSTER_480} 480w, ${POSTER_960} 960w, ${POSTER_1920} 1920w`,
-    [POSTER_480, POSTER_960, POSTER_1920],
-  )
 
   const [skipVideo] = useState(() => {
     const { isSlow, saveData } = getConnectionInfo()
     return isSlow || saveData
   })
 
+  // ── Video playback ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (skipVideo) return
     const videoA = refA.current
     const videoB = refB.current
     if (!videoA || !videoB) return
 
-    let destroyed   = false
-    let switching   = false
-    let currentVid  = videoA
-    let standbyVid  = videoB
+    let destroyed  = false
+    let switching  = false
+    let currentVid = videoA
+    let standbyVid = videoB
 
     const mp4Url = cloudinaryMp4Url(publicId)
 
+    // Hide poster only after an actual video frame has been painted.
+    // requestVideoFrameCallback guarantees the frame is on screen before we act.
+    const onFirstFrame = () => {
+      if (destroyed) return
+      if (typeof (videoA as any).requestVideoFrameCallback === 'function') {
+        ;(videoA as any).requestVideoFrameCallback(() => {
+          if (!destroyed) setVideoReady(true)
+        })
+      } else {
+        // Fallback: two timeupdate ticks = at least one frame rendered
+        let ticks = 0
+        const onTU = () => {
+          if (destroyed) return
+          if (++ticks >= 2) {
+            videoA.removeEventListener('timeupdate', onTU)
+            setVideoReady(true)
+          }
+        }
+        videoA.addEventListener('timeupdate', onTU)
+      }
+    }
+    videoA.addEventListener('playing', onFirstFrame, { once: true })
+
+    // Seamless loop: B starts 1.5 s before A ends, instant cut when A finishes
     const onTimeUpdate = () => {
       if (destroyed || switching) return
       const { duration, currentTime } = currentVid
@@ -97,15 +150,11 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
       if (currentTime < duration - SWITCH_BEFORE_END_S) return
 
       switching = true
-
-      // Start standby — already buffered at frame 0, plays instantly
       standbyVid.play().catch(() => {})
 
-      // Hard cut — no fade
       const next = currentVid === videoA ? 'b' : 'a'
       setActive(next)
 
-      // Reset old video after a moment, make it standby for next loop
       setTimeout(() => {
         if (destroyed) return
         const old = currentVid
@@ -114,19 +163,17 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
 
         standbyVid = currentVid
         currentVid = next === 'a' ? videoA : videoB
-
         currentVid.addEventListener('timeupdate', onTimeUpdate)
         old.removeEventListener('timeupdate', onTimeUpdate)
-
         switching = false
       }, 200)
     }
 
-    // Preload standby at frame 0 without playing
+    // Preload B silently — browser buffers from frame 0, does not play
     videoB.src = mp4Url
     videoB.load()
 
-    // Start active
+    // Start A
     videoA.src = mp4Url
     videoA.load()
     videoA.addEventListener('timeupdate', onTimeUpdate)
@@ -143,6 +190,7 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
 
     return () => {
       destroyed = true
+      videoA.removeEventListener('playing',    onFirstFrame)
       videoA.removeEventListener('timeupdate', onTimeUpdate)
       videoB.removeEventListener('timeupdate', onTimeUpdate)
       ;[videoA, videoB].forEach(v => {
@@ -154,6 +202,11 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skipVideo, publicId])
 
+  // Whether to show any poster layer at all:
+  // - Always show until video is ready (first frame painted)
+  // - On slow connections (skipVideo) always show
+  const showPosterLayer = !videoReady || skipVideo
+
   return (
     <section
       className={`relative h-screen w-full overflow-hidden flex items-end justify-center pb-8 md:pb-32 ${className}`}
@@ -161,7 +214,7 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
     >
       {!skipVideo && (
         <>
-          {/* B underneath, A on top — only the active one is visible */}
+          {/* B underneath */}
           <video
             key={`b-${publicId}`}
             ref={refB}
@@ -169,8 +222,9 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
             playsInline
             {...({ 'webkit-playsinline': 'true', playsinline: 'true' } as any)}
             preload="auto"
-            style={{ ...VIDEO_STYLE, zIndex: 0 }}
+            style={{ ...FILL_STYLE, zIndex: 0 }}
           />
+          {/* A on top — hidden when B is active */}
           <video
             key={`a-${publicId}`}
             ref={refA}
@@ -179,37 +233,63 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
             playsInline
             {...({ 'webkit-playsinline': 'true', playsinline: 'true' } as any)}
             preload="auto"
-            style={{
-              ...VIDEO_STYLE,
-              zIndex:  1,
-              opacity: active === 'a' ? 1 : 0,
-            }}
+            style={{ ...FILL_STYLE, zIndex: 1, opacity: active === 'a' ? 1 : 0 }}
           />
         </>
       )}
 
-      {/* Poster — sits above both videos, instantly hidden once skipped */}
-      <img
-        key={`poster-${publicId}-${posterStamp}`}
-        src={POSTER_1920}
-        srcSet={POSTER_SRCSET}
-        sizes="100vw"
-        alt=""
-        aria-hidden="true"
-        {...({ fetchpriority: 'high' } as any)}
-        decoding="sync"
-        style={{
-          position:      'absolute',
-          inset:         0,
-          width:         '100%',
-          height:        '100%',
-          objectFit:     'cover',
-          objectPosition:'center',
-          zIndex:        2,
-          pointerEvents: 'none',
-          display:       skipVideo ? 'block' : 'none',
-        }}
-      />
+      {/* ── Poster layer ───────────────────────────────────────────────────────
+          Two <img> elements stacked:
+            - cachedImg (bottom): the stamp=0 URL the browser likely has cached
+              from a previous visit. Shows instantly with zero network cost.
+            - freshImg  (top):    the current-stamp URL. Hidden until loaded,
+              then shown — silently replaces cached without any visible gap.
+          Both are removed once the first real video frame is painted.
+      */}
+      {showPosterLayer && (
+        <div
+          style={{
+            position:   'absolute',
+            inset:      0,
+            zIndex:     2,
+            pointerEvents: 'none',
+          }}
+        >
+          {/* Cached poster — instant, may be from previous session */}
+          <img
+            key={`poster-cached-${publicId}`}
+            src={cachedPosterUrl}
+            alt=""
+            aria-hidden="true"
+            {...({ fetchpriority: 'high' } as any)}
+            decoding="sync"
+            style={{
+              ...FILL_STYLE,
+              zIndex:  0,
+              // Hidden once fresh poster is ready — fresh takes over
+              opacity: posterReady ? 0 : 1,
+            }}
+          />
+          {/* Fresh poster — loads in background, takes over when ready */}
+          <img
+            key={`poster-fresh-${publicId}-${posterStamp}`}
+            src={freshPosterUrl}
+            srcSet={freshPosterSrcSet}
+            sizes="100vw"
+            alt=""
+            aria-hidden="true"
+            {...({ fetchpriority: 'high' } as any)}
+            decoding="async"
+            onLoad={() => setPosterReady(true)}
+            style={{
+              ...FILL_STYLE,
+              zIndex:  1,
+              // Only visible once loaded — avoids flash of empty/broken state
+              opacity: posterReady ? 1 : 0,
+            }}
+          />
+        </div>
+      )}
 
       <div
         aria-hidden="true"
