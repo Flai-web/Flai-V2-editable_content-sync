@@ -16,11 +16,10 @@ import {
 export interface HeroVideoSectionProps {
   className?: string
   children?: React.ReactNode
+  videoUrl?: string  // kept for API compatibility, not used internally
 }
 
-// ─── Connection quality check ─────────────────────────────────────────────────
-// Evaluated lazily at mount, not at module load, so navigating back to the home
-// page re-reads the current connection (could have changed since first load).
+// ─── Connection quality ───────────────────────────────────────────────────────
 function getConnectionInfo() {
   if (typeof navigator === 'undefined') return { isSlow: false, saveData: false }
   const conn =
@@ -33,50 +32,65 @@ function getConnectionInfo() {
   }
 }
 
-// How long to wait for first frame before revealing the video regardless.
-// 8 s (was 12 s): on connections slow enough that 8 s isn't enough, the video
-// quality will be unacceptably degraded anyway — better to show it earlier.
 const PLAY_TIMEOUT_MS = 8_000
 
 // ─── Component ────────────────────────────────────────────────────────────────
-const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
-  className = '',
-  children,
-}) => {
+const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', children }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // videoReady: true once first frame is composited to screen
-  // loopSeeking: true during the loop-restart gap to prevent black flash
   const [videoReady,  setVideoReady]  = useState(false)
   const [loopSeeking, setLoopSeeking] = useState(false)
-
-  // Read by seeking handler synchronously — ref avoids stale closure issue
   const hasStartedRef = useRef(false)
 
-  // ── Derive stable URLs from the module singleton ──────────────────────────
-  const { public_id: PUBLIC_ID } = useMemo(() => getHeroVideo(), [])
+  // ── publicId drives everything — changing it tears down + rebuilds HLS ─────
+  // Initialised from the module singleton (which reads window.__HERO_PUBLIC_ID
+  // set by the index.html inline script). Updated by the 'heroVideoChanged'
+  // event dispatched by bustHeroCache() after a new video upload.
+  const [publicId, setPublicId] = useState(() => getHeroVideo().public_id)
 
-  // q_auto:eco for sub-1080 breakpoints — ~25% smaller, zero perceptible diff
-  const POSTER_480    = useMemo(() => cloudinaryPosterUrl(PUBLIC_ID,  480, 'eco'),  [PUBLIC_ID])
-  const POSTER_960    = useMemo(() => cloudinaryPosterUrl(PUBLIC_ID,  960, 'eco'),  [PUBLIC_ID])
-  const POSTER_1920   = useMemo(() => cloudinaryPosterUrl(PUBLIC_ID, 1920, 'good'), [PUBLIC_ID])
+  // ── Listen for bust events from VideoManager ──────────────────────────────
+  // This is the fix for "video doesn't play after cache bust":
+  // When bustHeroCache(newId) completes it dispatches 'heroVideoChanged'.
+  // Updating publicId state here causes the useEffect below to re-run,
+  // which tears down the old HLS instance and initialises a fresh one
+  // pointing at the new Cloudinary asset — no page reload needed.
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      const newId = (e as CustomEvent<{ publicId: string }>).detail?.publicId
+      if (newId && newId !== publicId) {
+        // Reset ready state so the poster shows during the transition
+        hasStartedRef.current = false
+        setVideoReady(false)
+        setLoopSeeking(false)
+        setPublicId(newId)
+      }
+    }
+    window.addEventListener('heroVideoChanged', onChanged)
+    return () => window.removeEventListener('heroVideoChanged', onChanged)
+  }, [publicId])
+
+  // ── Derive URLs from publicId — stable per publicId value ─────────────────
+  const POSTER_480    = useMemo(() => cloudinaryPosterUrl(publicId,  480, 'eco'),  [publicId])
+  const POSTER_960    = useMemo(() => cloudinaryPosterUrl(publicId,  960, 'eco'),  [publicId])
+  const POSTER_1920   = useMemo(() => cloudinaryPosterUrl(publicId, 1920, 'good'), [publicId])
   const POSTER_SRCSET = useMemo(
     () => `${POSTER_480} 480w, ${POSTER_960} 960w, ${POSTER_1920} 1920w`,
     [POSTER_480, POSTER_960, POSTER_1920],
   )
 
-  // ── Skip video on metered / 2G connections ────────────────────────────────
   const [skipVideo] = useState(() => {
     const { isSlow, saveData } = getConnectionInfo()
     return isSlow || saveData
   })
 
-  // ── markReady is stable — prevents useEffect teardown on first frame ──────
   const markReady = useCallback(() => {
     hasStartedRef.current = true
     setVideoReady(true)
   }, [])
 
+  // ── Main video effect — re-runs when publicId changes ─────────────────────
+  // publicId in the dep array is what makes the "bust → new video plays"
+  // flow work: changing publicId triggers a full teardown + reinitialise.
   useEffect(() => {
     if (skipVideo) return
     const video = videoRef.current
@@ -86,15 +100,9 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
     let hlsInstance: Hls | null = null
     let timeoutId:   ReturnType<typeof setTimeout> | null = null
 
-    // ── Safety-net: reveal video even if playing event never fires ────────────
-    // Covers: autoplay silently blocked, tab hidden before first frame, non-fatal
-    // HLS stalls. Reduced to 8 s — 12 s was excessive for modern connections.
     timeoutId = setTimeout(() => { if (!destroyed) markReady() }, PLAY_TIMEOUT_MS)
 
-    // ── First-frame detection ─────────────────────────────────────────────────
-    // requestVideoFrameCallback fires exactly when a frame is composited to the
-    // screen. Two rAFs ensure the frame is fully painted before the swap.
-    // This guarantees zero black flash between poster and video.
+    // ── First-frame detection ─────────────────────────────────────────────
     const onPlaying = () => {
       if (destroyed) return
       if (timeoutId) { clearTimeout(timeoutId); timeoutId = null }
@@ -106,21 +114,16 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
           })
         })
       } else {
-        // Fallback: two timeupdate ticks — first can fire before frame is painted
-        // on older browsers.
         let ticks = 0
         const onTU = () => {
           if (destroyed) return
-          if (++ticks >= 2) {
-            video.removeEventListener('timeupdate', onTU)
-            markReady()
-          }
+          if (++ticks >= 2) { video.removeEventListener('timeupdate', onTU); markReady() }
         }
         video.addEventListener('timeupdate', onTU)
       }
     }
 
-    // ── Autoplay-blocked recovery ─────────────────────────────────────────────
+    // ── Autoplay-blocked recovery ─────────────────────────────────────────
     const tryPlay = (src?: string): void => {
       if (src) video.src = src
       video.load()
@@ -139,8 +142,7 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
       }
     }
 
-    // ── Loop-restart flash prevention ─────────────────────────────────────────
-    // Show poster during the black gap at loop point (seek to t=0).
+    // ── Loop-restart flash prevention ─────────────────────────────────────
     const onSeeking = () => {
       if (destroyed) return
       if (hasStartedRef.current && video.currentTime < 0.5) setLoopSeeking(true)
@@ -160,35 +162,23 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
     video.addEventListener('seeking', onSeeking)
     video.addEventListener('seeked',  onSeeked)
 
-    const mp4Url = cloudinaryMp4Url(PUBLIC_ID)
-    const hlsUrl = cloudinaryHlsUrl(PUBLIC_ID)
+    const mp4Url = cloudinaryMp4Url(publicId)
+    const hlsUrl = cloudinaryHlsUrl(publicId)
 
-    // ── HLS path: Chrome, Firefox, Edge, Android ──────────────────────────────
+    // ── HLS path ──────────────────────────────────────────────────────────
     if (Hls.isSupported()) {
       hlsInstance = new Hls({
-        // ── Startup speed ────────────────────────────────────────────────────
-        startLevel:           -1,    // auto-select by bandwidth estimate
-        capLevelToPlayerSize: true,  // never fetch resolution > element size
-
-        // maxBufferLength:6 → plays after buffering 6 s, back-fills to 20 s.
-        // Lower than 6 risks stalls; higher delays first-frame.
-        maxBufferLength:    6,
-        maxMaxBufferLength: 20,
-
-        // startPosition:0 eliminates any seek-to-start overhead on init.
-        startPosition: 0,
-
-        // ── Worker + prefetch ─────────────────────────────────────────────────
-        enableWorker:      true,   // ABR maths off main thread
-        lowLatencyMode:    false,
-        startFragPrefetch: true,   // pre-fetch next fragment at segment boundary
-        autoStartLoad:     true,
-
-        // ── ABR conservatism — avoid mid-play quality drops ───────────────────
+        startLevel:           -1,
+        capLevelToPlayerSize: true,
+        maxBufferLength:      6,
+        maxMaxBufferLength:   20,
+        startPosition:        0,
+        enableWorker:         true,
+        lowLatencyMode:       false,
+        startFragPrefetch:    true,
+        autoStartLoad:        true,
         abrBandWidthFactor:   0.95,
         abrBandWidthUpFactor: 0.7,
-
-        // ── Retry budget ──────────────────────────────────────────────────────
         fragLoadingMaxRetry:        6,
         fragLoadingRetryDelay:      500,
         fragLoadingMaxRetryTimeout: 4_000,
@@ -216,7 +206,7 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
         }
       })
     } else {
-      // ── Native HLS (Safari) or MP4 fallback ──────────────────────────────
+      // ── Native HLS (Safari) or MP4 fallback ──────────────────────────
       const useNativeHls =
         video.canPlayType('application/vnd.apple.mpegurl') !== '' ||
         video.canPlayType('application/x-mpegURL')         !== ''
@@ -234,11 +224,11 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
       video.removeAttribute('src')
       video.load()
     }
-  // videoReady / loopSeeking intentionally excluded: this effect sets them but
-  // must never react to them — doing so triggers a full teardown on first-frame
-  // (src removed) which is the blank-flash bug we are preventing.
+  // publicId is intentionally IN deps — changing it must trigger full teardown
+  // so the new video source is loaded. videoReady/loopSeeking are intentionally
+  // OUT — they are set by this effect but must never cause it to re-run.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [skipVideo, markReady, PUBLIC_ID])
+  }, [skipVideo, markReady, publicId])
 
   const showPoster = !videoReady || loopSeeking
 
@@ -247,22 +237,19 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
       className={`relative h-screen w-full overflow-hidden flex items-end justify-center pb-8 md:pb-32 ${className}`}
       style={{ backgroundColor: '#111' }}
     >
-      {/* ── Video ──────────────────────────────────────────────────────────────
-          Always mounted (unless 2G/saveData) so buffering starts before the
-          poster has finished decoding. Hidden via visibility:hidden — atomic
-          compositor exclusion — until first frame is confirmed painted.
-          opacity:0 is NOT sufficient: it still composites the black background
-          through for one cycle. */}
+      {/* ── Video ────────────────────────────────────────────────────────────
+          visibility:hidden keeps the element off the compositor entirely until
+          the first frame is painted — prevents the black-background flash that
+          opacity:0 cannot stop. Re-mounts cleanly when publicId changes. */}
       {!skipVideo && (
         <video
+          key={publicId}  // forces a clean DOM remount when publicId changes
           ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
           {...({ 'webkit-playsinline': 'true', playsinline: 'true' } as any)}
-          // preload="metadata": dimensions + duration without buffering payload.
-          // hls.js owns buffering. "auto" causes a redundant speculative MP4 fetch.
           preload="metadata"
           style={{
             position:       'absolute',
@@ -278,14 +265,12 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
         />
       )}
 
-      {/* ── Poster ─────────────────────────────────────────────────────────────
-          fetchpriority="high" + decoding="sync" + the module-level preload tag
-          together guarantee the poster is decoded and painted as early as
-          physically possible — typically before React's first commit.
-
-          NO opacity transition. Any fade creates a gap where neither poster
-          nor video is visible. Atomic instant swap only. */}
+      {/* ── Poster ───────────────────────────────────────────────────────────
+          fetchpriority="high" + decoding="sync" + the index.html inline-script
+          preload together guarantee the poster is painted as early as possible.
+          key={publicId} forces the img to re-fetch when the video changes. */}
       <img
+        key={`poster-${publicId}`}
         src={POSTER_1920}
         srcSet={POSTER_SRCSET}
         sizes="100vw"
@@ -302,11 +287,13 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
           objectPosition: 'center',
           zIndex:         1,
           pointerEvents:  'none',
+          // Instant atomic swap — no transition avoids any gap between poster
+          // and video frame where neither is visible.
           opacity:        showPoster ? 1 : 0,
         }}
       />
 
-      {/* ── Gradient ───────────────────────────────────────────────────────── */}
+      {/* Gradient */}
       <div
         aria-hidden="true"
         style={{
