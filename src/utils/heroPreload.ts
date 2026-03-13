@@ -1,52 +1,37 @@
 /**
- * heroPreload.ts — maximum-speed edition
+ * heroPreload.ts
  *
- * Speed timeline (what this file controls):
+ * Imported ONLY by HomePage (via `import '../utils/heroPreload'`).
+ * Never runs on other routes — no wasted preloads/fetches on /products etc.
  *
- * T+0ms   Module imported → injectConnectionHints() fires synchronously.
- *         TLS handshake to res.cloudinary.com starts IMMEDIATELY — before
- *         any URL is even computed. Separated from injectPreloadHints() so
- *         there is zero function-call overhead between module parse and
- *         the preconnect instruction reaching the browser network stack.
+ * ─── Speed architecture ───────────────────────────────────────────────────────
  *
- * T+0ms   injectPreloadHints() fires. Poster + HLS manifest enter the browser
- *         fetch queue at fetchpriority=high BEFORE React mounts.
- *         Uses a DocumentFragment — single DOM mutation, one style recalc.
+ * T+0ms  index.html inline script fires synchronously during HTML parsing.
+ *        It checks window.location.pathname === '/' and — only then — injects
+ *        the preconnect + poster preload + HLS manifest preload into <head>.
+ *        These fetches queue BEFORE the JS bundle is even downloaded.
+ *        window.__HERO_PUBLIC_ID is set to the current publicId.
  *
- * T+Xms   Poster bytes arrive from CDN edge (or HTTP cache on repeat visits).
- *         Decoded synchronously (decoding="sync" on the <img>). FCP fires.
+ * T+?ms  heroPreload.ts module is imported by HomePage's lazy chunk.
+ *        It reads __HERO_PUBLIC_ID so URL builders use the same id the
+ *        inline script already preloaded — guaranteed cache hit for hls.js.
  *
- * T+Xms   HLS manifest arrives → hls.js parses → first segment fetch.
- *         Video visible after first keyframe.
+ * ─── After bustHeroCache() ────────────────────────────────────────────────────
  *
- * ─── Speed gains vs. previous version ────────────────────────────────────────
- *
- * 1. TLS handshake decoupled from URL builders (T+0 vs T+~1ms).
- *
- * 2. f_auto on poster → AVIF on Chrome 120+/Safari 16+/FF113+.
- *    Typically 30–50% smaller than WebP at equal perceptual quality.
- *    Faster transfer AND faster decode (AVIF tiles are parallel-decoded).
- *    Cloudinary ignores the .webp extension when f_auto is present.
- *
- * 3. q_auto:eco for the 480/960 poster breakpoints (was q_auto/q_auto:good).
- *    These are never rendered on high-DPR desktop. ~25% smaller files.
- *
- * 4. dl_auto added to the MP4 URL (was missing). Enables Cloudinary's
- *    adaptive streaming delivery for progressive MP4 — byte-range prefetch,
- *    faster TTFB on first segment.
- *
- * 5. DocumentFragment batch insertion in injectPreloadHints() — one DOM
- *    mutation instead of two, halving reflow cost on low-end devices.
- *
- * 6. crossOrigin on the HLS preload tag now uses the DOM property (not
- *    setAttribute) for spec-correct CORS mode matching hls.js's fetch().
- *    Without this the preload is a cache miss for hls.js on some Chromium
- *    builds (setAttribute normalises to lowercase, property to "anonymous").
+ * When VideoManager uploads a new hero video it calls bustHeroCache(newId).
+ * The sequence:
+ *   1. Re-fetch all assets with { cache: 'reload' } — warms HTTP cache with
+ *      new bytes.
+ *   2. Update window.__HERO_PUBLIC_ID to newId.
+ *   3. Refresh the <link data-hero-slot> tags so a soft-navigation back to '/'
+ *      gets the new preload URL instantly (no full-page reload needed).
+ *   4. Dispatch 'heroVideoChanged' event — HeroVideoSection listens and
+ *      reinitialises its HLS source so the new video plays immediately,
+ *      without waiting for a page reload.
  *
  * ─── Cloudinary URL rules ─────────────────────────────────────────────────────
- * • f_auto and q_auto MUST be separate chained /components/, never commas.
+ * • f_auto and q_auto MUST be separate chained /-components, never commas.
  * • f_auto is INCOMPATIBLE with sp_auto (sp_auto handles format internally).
- * • f_auto in eager transforms has no effect (no browser at transcode time).
  */
 
 const CLOUD          = 'dq6jxbyrg'
@@ -80,56 +65,33 @@ export function cloudinaryPosterUrl(
   )
 }
 
-// ─── T+0: TLS handshake — runs BEFORE URL builder calls ──────────────────────
+// ─── Active public ID ─────────────────────────────────────────────────────────
+// Read from the inline script's window global so URL builders always match
+// what was already preloaded — guarantees a cache hit for hls.js.
 
-function injectConnectionHints(): void {
-  if (typeof document === 'undefined') return
-  const head   = document.head
-  const origin = 'https://res.cloudinary.com'
-
-  if (!head.querySelector(`link[rel="preconnect"][href="${origin}"]`)) {
-    const pc     = document.createElement('link')
-    pc.rel       = 'preconnect'
-    pc.href      = origin
-    pc.crossOrigin = 'anonymous'
-    head.prepend(pc)
+function getActivePublicId(): string {
+  if (typeof window !== 'undefined' && (window as any).__HERO_PUBLIC_ID) {
+    return (window as any).__HERO_PUBLIC_ID as string
   }
-
-  if (!head.querySelector(`link[rel="dns-prefetch"][href="${origin}"]`)) {
-    const dp = document.createElement('link')
-    dp.rel   = 'dns-prefetch'
-    dp.href  = origin
-    head.prepend(dp)
-  }
+  return HERO_PUBLIC_ID
 }
 
-// ─── Preload hints ────────────────────────────────────────────────────────────
+// ─── Preload tag refresh ──────────────────────────────────────────────────────
+// Called after a cache bust to update the <link data-hero-slot> tags that the
+// inline script injected. This means soft-navigation back to '/' picks up the
+// new asset immediately — no full-page reload needed.
 
-export function injectPreloadHints(publicId = HERO_PUBLIC_ID): void {
+function refreshPreloadTags(publicId: string): void {
   if (typeof document === 'undefined') return
-  const head = document.head
 
-  // Remove stale slot tags — no-op on first call, required after a bust
-  head.querySelectorAll('link[data-hero-slot]').forEach(el => el.remove())
+  // Only refresh if the inline script actually ran (i.e. we're on '/')
+  const existing = document.head.querySelectorAll('link[data-hero-slot]')
+  if (!existing.length) return
 
-  // Batch into a fragment → one DOM mutation, one reflow
+  existing.forEach(el => el.remove())
+
   const frag = document.createDocumentFragment()
 
-  // ── HLS manifest ───────────────────────────────────────────────────────────
-  // crossOrigin property (not setAttribute) ensures CORS mode matches hls.js's
-  // fetch() call (credentials:'omit') → guaranteed cache hit, not a miss.
-  const hlsLink              = document.createElement('link')
-  hlsLink.rel                = 'preload'
-  hlsLink.as                 = 'fetch'
-  hlsLink.href               = cloudinaryHlsUrl(publicId)
-  hlsLink.crossOrigin        = 'anonymous'
-  ;(hlsLink as any).fetchPriority = 'high'
-  hlsLink.dataset.heroSlot   = 'hls'
-  frag.appendChild(hlsLink)
-
-  // ── Poster (responsive) ────────────────────────────────────────────────────
-  // q_auto:eco for sub-1080 breakpoints — ~25% smaller, imperceptible diff.
-  // q_auto:good for 1920 — full quality for desktop hero.
   const posterLink                  = document.createElement('link')
   posterLink.rel                    = 'preload'
   posterLink.as                     = 'image'
@@ -144,7 +106,16 @@ export function injectPreloadHints(publicId = HERO_PUBLIC_ID): void {
   posterLink.dataset.heroSlot       = 'poster'
   frag.appendChild(posterLink)
 
-  head.prepend(frag)
+  const hlsLink              = document.createElement('link')
+  hlsLink.rel                = 'preload'
+  hlsLink.as                 = 'fetch'
+  hlsLink.href               = cloudinaryHlsUrl(publicId)
+  hlsLink.crossOrigin        = 'anonymous'
+  ;(hlsLink as any).fetchPriority = 'high'
+  hlsLink.dataset.heroSlot   = 'hls'
+  frag.appendChild(hlsLink)
+
+  document.head.prepend(frag)
 }
 
 // ─── Cache busting ────────────────────────────────────────────────────────────
@@ -152,16 +123,18 @@ export function injectPreloadHints(publicId = HERO_PUBLIC_ID): void {
 /**
  * bustHeroCache(publicId?)
  *
- * Call immediately after a new hero video is uploaded.
+ * Called by VideoManager immediately after a hero video upload/replace.
  * Runs inside requestIdleCallback — zero competition with paint or interaction.
  *
+ * Fixes the "video doesn't play after cache bust" bug:
+ *   After the HTTP cache is warmed, this dispatches a 'heroVideoChanged' event
+ *   with the new publicId. HeroVideoSection listens for this event and
+ *   reinitialises its HLS source immediately — no page reload required.
+ *
  * Key rules:
- *  • NO mode:'no-cors' — opaque responses are NOT written to HTTP cache when
- *    cache:'reload' is set. Every previous fetch was a silent no-op.
- *  • credentials:'omit' — still avoids sending cookies without going opaque.
- *  • Promise.allSettled before injectPreloadHints — preload tags only point at
- *    new bytes AFTER the cache is confirmed warm.
- *  • MP4: Range:bytes=0-0 — refreshes cache entry with a 1-byte payload.
+ *   NO mode:'no-cors' — opaque responses are NOT written to HTTP cache.
+ *   MP4: Range:bytes=0-0 — 1-byte fetch refreshes cache entry cheaply.
+ *   Promise.allSettled — one CDN miss never blocks the others.
  */
 export function bustHeroCache(publicId = HERO_PUBLIC_ID): void {
   if (typeof window === 'undefined') return
@@ -174,9 +147,22 @@ export function bustHeroCache(publicId = HERO_PUBLIC_ID): void {
       fetch(cloudinaryPosterUrl(publicId,  480, 'eco'),  opts),
       fetch(cloudinaryPosterUrl(publicId,  960, 'eco'),  opts),
       fetch(cloudinaryPosterUrl(publicId, 1920, 'good'), opts),
-      fetch(new Request(cloudinaryMp4Url(publicId), { ...opts, headers: { Range: 'bytes=0-0' } })),
-    ]).then(() => injectPreloadHints(publicId))
-      .catch(() => { /* non-fatal */ })
+      fetch(new Request(cloudinaryMp4Url(publicId), {
+        ...opts,
+        headers: { Range: 'bytes=0-0' },
+      })),
+    ]).then(() => {
+      // 1. Update the global so getActivePublicId() returns the new id
+      ;(window as any).__HERO_PUBLIC_ID = publicId
+
+      // 2. Refresh <link> tags for the next soft-navigation to '/'
+      refreshPreloadTags(publicId)
+
+      // 3. Tell HeroVideoSection to reinitialise NOW — fixes the "no play after
+      //    bust" bug. The component tears down its HLS instance and starts fresh
+      //    with the new publicId, so the new video plays without a page reload.
+      window.dispatchEvent(new CustomEvent('heroVideoChanged', { detail: { publicId } }))
+    }).catch(() => { /* non-fatal */ })
   }
 
   if (typeof requestIdleCallback === 'function') {
@@ -186,17 +172,15 @@ export function bustHeroCache(publicId = HERO_PUBLIC_ID): void {
   }
 }
 
-// ─── Module init — fires synchronously at import time ────────────────────────
+// ─── Module singleton ─────────────────────────────────────────────────────────
+// Built from the active publicId so URL builders always match the preloaded asset.
 
-if (typeof document !== 'undefined') {
-  injectConnectionHints() // T+0: start TLS handshake immediately
-  injectPreloadHints()    // T+0: poster + manifest queued at fetchpriority=high
-}
+const _id = getActivePublicId()
 
 const heroVideo: HeroVideo = {
-  public_id: HERO_PUBLIC_ID,
-  hlsUrl:    cloudinaryHlsUrl(HERO_PUBLIC_ID),
-  posterUrl: cloudinaryPosterUrl(HERO_PUBLIC_ID, 1920, 'good'),
+  public_id: _id,
+  hlsUrl:    cloudinaryHlsUrl(_id),
+  posterUrl: cloudinaryPosterUrl(_id, 1920, 'good'),
 }
 
 export function getHeroVideo(): HeroVideo           { return heroVideo }
