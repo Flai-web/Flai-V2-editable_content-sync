@@ -14,7 +14,7 @@ import {
 export interface HeroVideoSectionProps {
   className?: string
   children?: React.ReactNode
-  videoUrl?: string  // unused — kept for API compat with HomePage
+  videoUrl?: string
 }
 
 function getConnectionInfo() {
@@ -31,13 +31,30 @@ function getConnectionInfo() {
 
 const PLAY_TIMEOUT_MS = 4_000
 
-// How many seconds before the end to seek back to 0.
-// Large enough that the browser has buffered the start before we arrive there,
-// small enough that it's imperceptible. 0.3 s is a safe sweet-spot.
-const LOOP_PREROLL_S = 0.3
+// How many seconds before the end to start the crossfade to the next instance.
+const CROSSFADE_START_S  = 1.5
+// How long the crossfade lasts in ms. Must be <= CROSSFADE_START_S * 1000.
+const CROSSFADE_DURATION_MS = 1_200
+
+const VIDEO_STYLE: React.CSSProperties = {
+  position:       'absolute',
+  inset:          0,
+  width:          '100%',
+  height:         '100%',
+  objectFit:      'cover',
+  objectPosition: 'center',
+  display:        'block',
+  transition:     `opacity ${CROSSFADE_DURATION_MS}ms ease`,
+}
 
 const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', children }) => {
-  const videoRef      = useRef<HTMLVideoElement>(null)
+  // Two video refs — A and B alternate as active/standby.
+  const refA = useRef<HTMLVideoElement>(null)
+  const refB = useRef<HTMLVideoElement>(null)
+
+  // Which video is currently the visible one: 'a' or 'b'
+  const [active, setActive] = useState<'a' | 'b'>('a')
+
   const [videoReady,  setVideoReady]  = useState(false)
   const hasStartedRef = useRef(false)
 
@@ -51,6 +68,7 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
       if (newId && newId !== publicId) {
         hasStartedRef.current = false
         setVideoReady(false)
+        setActive('a')
         setPublicId(newId)
       }
       if (typeof stamp === 'number') setPosterStamp(stamp)
@@ -79,22 +97,35 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
 
   useEffect(() => {
     if (skipVideo) return
-    const video = videoRef.current
-    if (!video) return
 
-    let destroyed = false
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-    let loopArmed  = false   // true once duration is known and loop logic is active
+    const videoA = refA.current
+    const videoB = refB.current
+    if (!videoA || !videoB) return
 
-    // ── First-frame detection ────────────────────────────────────────────────
-    // Wait for 2 painted frames before swapping poster → video so there's no
-    // single-frame black flash on reveal.
-    const onPlaying = () => {
+    let destroyed    = false
+    let timeoutId:   ReturnType<typeof setTimeout> | null = null
+    let crossfading  = false
+    // Which is currently playing ('a' starts as active)
+    let currentRef   = videoA
+    let standbyRef   = videoB
+
+    const mp4Url = cloudinaryMp4Url(publicId)
+
+    // ── Utility ──────────────────────────────────────────────────────────────
+    const prepareStandby = (vid: HTMLVideoElement) => {
+      vid.src = mp4Url
+      vid.load()
+      // Preload enough that it can start instantly when we call play()
+      // We don't call play() yet — just let the browser buffer the start.
+    }
+
+    // ── First-frame reveal ───────────────────────────────────────────────────
+    const onFirstPlaying = () => {
       if (destroyed) return
       if (timeoutId) { clearTimeout(timeoutId); timeoutId = null }
 
-      if (typeof (video as any).requestVideoFrameCallback === 'function') {
-        ;(video as any).requestVideoFrameCallback(() => {
+      if (typeof (videoA as any).requestVideoFrameCallback === 'function') {
+        ;(videoA as any).requestVideoFrameCallback(() => {
           requestAnimationFrame(() => {
             requestAnimationFrame(() => { if (!destroyed) markReady() })
           })
@@ -103,48 +134,70 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
         let ticks = 0
         const onTU = () => {
           if (destroyed) return
-          if (++ticks >= 2) { video.removeEventListener('timeupdate', onTU); markReady() }
+          if (++ticks >= 2) { videoA.removeEventListener('timeupdate', onTU); markReady() }
         }
-        video.addEventListener('timeupdate', onTU)
+        videoA.addEventListener('timeupdate', onTU)
       }
     }
 
-    // ── Seamless loop via timeupdate ─────────────────────────────────────────
-    // The native `loop` attribute seeks to 0 after the last frame — the decoder
-    // has no frame ready at that instant → black flash.
-    //
-    // Instead: we watch timeupdate and seek to 0 when we're LOOP_PREROLL_S
-    // seconds from the end. The video is already playing; we just move the
-    // playhead back before it runs out. The browser never stalls, the decoder
-    // always has a frame ready, and the viewer never notices the loop point.
+    videoA.addEventListener('playing', onFirstPlaying, { once: true })
+
+    // ── Crossfade loop ───────────────────────────────────────────────────────
+    // timeupdate on the ACTIVE video. When it gets close to the end:
+    //   1. Start the standby video playing (it's already buffered at frame 0)
+    //   2. Fade active out, standby in via CSS transition (opacity)
+    //   3. After the transition, pause+reset the old active, prepare it as
+    //      the new standby for the next loop.
     const onTimeUpdate = () => {
-      if (destroyed || !loopArmed) return
-      const { duration, currentTime } = video
+      if (destroyed || crossfading) return
+
+      const { duration, currentTime } = currentRef
       if (!duration || !isFinite(duration)) return
-      if (currentTime >= duration - LOOP_PREROLL_S) {
-        video.currentTime = 0
-      }
-    }
+      if (currentTime < duration - CROSSFADE_START_S) return
 
-    // onDurationChange fires once the browser knows the video length.
-    // Only then can we safely arm the loop logic.
-    const onDurationChange = () => {
-      if (video.duration && isFinite(video.duration)) loopArmed = true
-    }
+      crossfading = true
 
-    video.addEventListener('playing',        onPlaying)
-    video.addEventListener('timeupdate',     onTimeUpdate)
-    video.addEventListener('durationchange', onDurationChange)
+      // The standby video was preloaded — start it now.
+      standbyRef.play().catch(() => {})
+
+      // Swap which React state is 'active' — CSS transition handles the fade.
+      const nextActive = currentRef === videoA ? 'b' : 'a'
+      setActive(nextActive)
+
+      // After the crossfade completes, reset the old video and make it standby.
+      setTimeout(() => {
+        if (destroyed) return
+        const old = currentRef
+        old.pause()
+        old.currentTime = 0
+        // Don't call old.load() — we want it buffered and ready, just paused.
+
+        // Swap pointers for the next loop iteration.
+        standbyRef = currentRef
+        currentRef = nextActive === 'a' ? videoA : videoB
+
+        // Re-attach timeupdate to the new active video.
+        currentRef.addEventListener('timeupdate', onTimeUpdate)
+        old.removeEventListener('timeupdate', onTimeUpdate)
+
+        crossfading = false
+      }, CROSSFADE_DURATION_MS + 100)
+    }
 
     // Safety valve
     timeoutId = setTimeout(() => { if (!destroyed) markReady() }, PLAY_TIMEOUT_MS)
 
-    video.src = cloudinaryMp4Url(publicId)
-    video.load()
-    video.play().catch(() => {
+    // Boot sequence:
+    // 1. Prepare standby (B) — buffer from start without playing
+    prepareStandby(videoB)
+    // 2. Start active (A)
+    videoA.src = mp4Url
+    videoA.load()
+    videoA.addEventListener('timeupdate', onTimeUpdate)
+    videoA.play().catch(() => {
       if (destroyed) return
       const retry = () => {
-        video.play().catch(() => {})
+        videoA.play().catch(() => {})
         document.removeEventListener('touchstart', retry)
         document.removeEventListener('click',      retry)
       }
@@ -155,12 +208,14 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
     return () => {
       destroyed = true
       if (timeoutId) clearTimeout(timeoutId)
-      video.removeEventListener('playing',        onPlaying)
-      video.removeEventListener('timeupdate',     onTimeUpdate)
-      video.removeEventListener('durationchange', onDurationChange)
-      video.pause()
-      video.removeAttribute('src')
-      video.load()
+      videoA.removeEventListener('playing',    onFirstPlaying)
+      videoA.removeEventListener('timeupdate', onTimeUpdate)
+      videoB.removeEventListener('timeupdate', onTimeUpdate)
+      ;[videoA, videoB].forEach(v => {
+        v.pause()
+        v.removeAttribute('src')
+        v.load()
+      })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skipVideo, markReady, publicId])
@@ -171,28 +226,38 @@ const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({ className = '', chi
       style={{ backgroundColor: '#111' }}
     >
       {!skipVideo && (
-        <video
-          key={publicId}
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          {...({ 'webkit-playsinline': 'true', playsinline: 'true' } as any)}
-          preload="auto"
-          style={{
-            position:       'absolute',
-            inset:          0,
-            width:          '100%',
-            height:         '100%',
-            objectFit:      'cover',
-            objectPosition: 'center',
-            zIndex:         0,
-            display:        'block',
-            visibility:     videoReady ? 'visible' : 'hidden',
-          }}
-        />
+        <>
+          <video
+            key={`a-${publicId}`}
+            ref={refA}
+            autoPlay
+            muted
+            playsInline
+            {...({ 'webkit-playsinline': 'true', playsinline: 'true' } as any)}
+            preload="auto"
+            style={{
+              ...VIDEO_STYLE,
+              zIndex:  0,
+              opacity: !videoReady ? 0 : active === 'a' ? 1 : 0,
+            }}
+          />
+          <video
+            key={`b-${publicId}`}
+            ref={refB}
+            muted
+            playsInline
+            {...({ 'webkit-playsinline': 'true', playsinline: 'true' } as any)}
+            preload="auto"
+            style={{
+              ...VIDEO_STYLE,
+              zIndex:  0,
+              opacity: !videoReady ? 0 : active === 'b' ? 1 : 0,
+            }}
+          />
+        </>
       )}
 
+      {/* Poster sits above both videos, fades out once video is ready */}
       <img
         key={`poster-${publicId}-${posterStamp}`}
         src={POSTER_1920}
