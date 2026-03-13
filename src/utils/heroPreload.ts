@@ -43,12 +43,15 @@ export interface HeroVideo {
 // Preloaded URLs and runtime URLs are always identical → guaranteed cache hit.
 
 export function cloudinaryHlsUrl(publicId: string): string {
-  return `https://res.cloudinary.com/${CLOUD}/video/upload/sp_auto/q_auto:good/${publicId}.m3u8`
+  // sp_hd generates HLS with multiple bitrate rungs (360p/720p/1080p).
+  // sp_auto caused 400 errors on MOV source files — sp_hd is more compatible.
+  return `https://res.cloudinary.com/${CLOUD}/video/upload/sp_hd/${publicId}.m3u8`
 }
 
 export function cloudinaryMp4Url(publicId: string): string {
-  // dl_auto: byte-range adaptive delivery — faster TTFB for first segment
-  return `https://res.cloudinary.com/${CLOUD}/video/upload/vc_auto/f_auto/q_auto:good/dl_auto/${publicId}.mp4`
+  // dl_auto is not a valid Cloudinary transformation and caused 400 errors.
+  // vc_h264 + f_mp4 + q_auto gives reliable cross-browser MP4 delivery.
+  return `https://res.cloudinary.com/${CLOUD}/video/upload/vc_h264/f_mp4/q_auto:good/${publicId}.mp4`
 }
 
 export function cloudinaryWebmUrl(publicId: string): string {
