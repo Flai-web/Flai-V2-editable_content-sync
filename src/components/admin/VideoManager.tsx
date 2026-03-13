@@ -37,6 +37,7 @@ import {
   cloudinaryHlsUrl,
   cloudinaryMp4Url,
   cloudinaryPosterUrl,
+  cloudinaryWebmUrl,
   bustHeroCache,
 } from '../../utils/heroPreload';
 
@@ -91,19 +92,8 @@ const EAGER_ALL = [
 // All delivery URLs carry compression + format params so even assets that
 // were uploaded before this update are served optimally.
 
-const CLD_BASE = `https://res.cloudinary.com/${CLOUD}`;
-
-const optimisedHlsUrl = (publicId: string) =>
-  `${CLD_BASE}/video/upload/sp_hd/f_m3u8/${publicId}.m3u8`;
-
-const optimisedMp4Url = (publicId: string) =>
-  `${CLD_BASE}/video/upload/c_limit,f_mp4,h_1080,q_auto,vc_h264,w_1920/${publicId}.mp4`;
-
-const optimisedWebmUrl = (publicId: string) =>
-  `${CLD_BASE}/video/upload/c_limit,f_webm,h_1080,q_auto,vc_vp9,w_1920/${publicId}.webm`;
-
-const optimisedPosterUrl = (publicId: string, w = 640) =>
-  `${CLD_BASE}/video/upload/f_jpg,q_auto,so_0,w_${w}/${publicId}.jpg`;
+// URL builders are imported from heroPreload — single source of truth so
+// VideoManager, HeroVideoSection and bustHeroCache all use identical URLs.
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -237,7 +227,7 @@ const EagerBadge: React.FC<{ publicId: string }> = ({ publicId }) => {
   useEffect(() => {
     let attempts = 0;
     const maxAttempts = 36; // 36 × 5 s = 3 min
-    const url = optimisedHlsUrl(publicId);
+    const url = cloudinaryHlsUrl(publicId);
 
     const check = async () => {
       try {
@@ -297,7 +287,7 @@ const AssignModal: React.FC<{ video: CldVideo; onClose: () => void }> = ({ video
   const [key, setKey]       = useState('');
   const [saving, setSaving] = useState(false);
   // Always store the optimised HLS URL so hero gets compression for free
-  const url = optimisedHlsUrl(video.public_id);
+  const url = cloudinaryHlsUrl(video.public_id);
 
   const handleAssign = async () => {
     if (!key.trim()) { toast.error('Angiv venligst en indholdsnøgle'); return; }
@@ -485,7 +475,7 @@ const UploadModal: React.FC<{ onClose: () => void; onCreated: (v: CldVideo) => v
         format:       'mp4',
         created_at:   new Date().toISOString(),
         bytes:        file.size,
-        secure_url:   optimisedMp4Url(result.public_id),
+        secure_url:   cloudinaryMp4Url(result.public_id),
         context:      { custom: { caption: videoTitle.trim(), alt: description.trim() } },
       };
       setTimeout(() => onCreated(newVideo), 800);
@@ -752,10 +742,10 @@ const VideoRow: React.FC<{
   const [deleting, setDeleting]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const hlsUrl  = optimisedHlsUrl(video.public_id);
-  const mp4Url  = optimisedMp4Url(video.public_id);
-  const webmUrl = optimisedWebmUrl(video.public_id);
-  const poster  = optimisedPosterUrl(video.public_id, 320);
+  const hlsUrl  = cloudinaryHlsUrl(video.public_id);
+  const mp4Url  = cloudinaryMp4Url(video.public_id);
+  const webmUrl = cloudinaryWebmUrl(video.public_id);
+  const poster  = cloudinaryPosterUrl(video.public_id, 320, 'eco');
   const hero    = isHero(video);
 
   const handleSave = async () => {
