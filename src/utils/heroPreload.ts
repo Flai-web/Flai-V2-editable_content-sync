@@ -21,9 +21,31 @@
  *   Fixed: singleton is mutable. bustHeroCache() mutates it, then dispatches
  *   'heroVideoChanged' so HeroVideoSection reloads with the new source.
  *
+ * BUG 4 — sp_hd requires eager pre-generation → 404 until Cloudinary finishes
+ *   sp_hd (named streaming profile) only works once the eager transformation is
+ *   fully generated server-side — which is async and takes minutes for large
+ *   videos. Requests before it's ready return 404.
+ *   sp_auto with .m3u8 extension works on-demand: Cloudinary generates the
+ *   manifest at the CDN edge on first request. No pre-generation needed.
+ *   Fixed: HLS delivery uses sp_auto. Eager preset uses sp_hd for pre-warming
+ *   so repeat visitors get a cached, multi-bitrate manifest — but the first
+ *   visitor after upload is never blocked by a 404.
+ *
+ * BUG 5 — Poster f_auto/.webp → 404 + "preloaded but not used" warning
+ *   f_auto with .webp extension requires Cloudinary to have already derived a
+ *   .webp version. If the eager transformation hasn't completed yet the URL 404s.
+ *   Additionally the preload hint injected .webp but when the browser chose a
+ *   different srcset entry the preload was wasted — triggering a browser warning.
+ *   Fixed: poster uses f_jpg — JPEG frames are derived synchronously from any
+ *   source format on first request with no pre-generation required. Srcset and
+ *   preload hints both use .jpg so they always match.
+ *
  * ─── Cloudinary URL rules ─────────────────────────────────────────────────────
- * • f_auto and q_auto MUST be separate chained /-components, never commas.
+ * • sp_auto for delivery — works on first request without eager pre-generation.
+ * • sp_hd for eager presets only — requires pre-generation to be complete first.
+ * • q_auto must NOT be chained after sp_auto — sp_auto controls quality itself.
  * • f_auto is INCOMPATIBLE with sp_auto (sp_auto handles format internally).
+ * • Poster frames: use f_jpg — always synchronously available, no 404 risk.
  */
 
 const CLOUD = 'dq6jxbyrg'
@@ -43,19 +65,21 @@ export interface HeroVideo {
 // Preloaded URLs and runtime URLs are always identical → guaranteed cache hit.
 
 export function cloudinaryHlsUrl(publicId: string): string {
-  // sp_hd generates HLS with multiple bitrate rungs (360p/720p/1080p).
-  // sp_auto caused 400 errors on MOV source files — sp_hd is more compatible.
-  return `https://res.cloudinary.com/${CLOUD}/video/upload/sp_hd/${publicId}.m3u8`
+  // sp_auto + .m3u8 — Cloudinary generates the adaptive HLS manifest on-demand
+  // at the CDN edge. Works immediately on first request without eager
+  // pre-generation. Do NOT chain q_auto — sp_auto controls quality internally.
+  return `https://res.cloudinary.com/${CLOUD}/video/upload/sp_auto/${publicId}.m3u8`
 }
 
 export function cloudinaryMp4Url(publicId: string): string {
-  // dl_auto is not a valid Cloudinary transformation and caused 400 errors.
-  // vc_h264 + f_mp4 + q_auto gives reliable cross-browser MP4 delivery.
+  // vc_h264/f_mp4/q_auto:good — explicit codec + format + quality.
+  // dl_auto was not a valid transformation (caused 400). vc_auto with f_auto
+  // is ambiguous when both are chained — explicit params are more reliable.
   return `https://res.cloudinary.com/${CLOUD}/video/upload/vc_h264/f_mp4/q_auto:good/${publicId}.mp4`
 }
 
 export function cloudinaryWebmUrl(publicId: string): string {
-  return `https://res.cloudinary.com/${CLOUD}/video/upload/vc_vp9/f_auto/q_auto:good/${publicId}.webm`
+  return `https://res.cloudinary.com/${CLOUD}/video/upload/vc_vp9/f_webm/q_auto:good/${publicId}.webm`
 }
 
 export function cloudinaryPosterUrl(
@@ -63,9 +87,16 @@ export function cloudinaryPosterUrl(
   width    = 1920,
   quality  = 'good',
 ): string {
+  // f_jpg — JPEG poster frames are derived synchronously from any source format
+  // (MOV, MP4, etc.) on first request without needing eager pre-generation.
+  // f_auto/.webp caused 404s when the derived webp asset wasn't ready yet,
+  // and triggered "preloaded but not used" warnings when the browser's srcset
+  // negotiation picked a different width/format than what was preloaded.
+  // dpr_auto removed — it doubles derived asset count with minimal visual gain
+  // given that we already provide a responsive srcset with 480w/960w/1920w.
   return (
     `https://res.cloudinary.com/${CLOUD}/video/upload/` +
-    `c_fill,g_auto,w_${width},dpr_auto,so_0/f_auto/q_auto:${quality}/${publicId}.webp`
+    `c_fill,g_auto,w_${width},so_0/f_jpg/q_auto:${quality}/${publicId}.jpg`
   )
 }
 
@@ -79,7 +110,7 @@ const heroVideo: HeroVideo = {
   posterUrl: cloudinaryPosterUrl(HERO_PUBLIC_ID, 1920, 'good'),
 }
 
-export function getHeroVideo(): HeroVideo           { return heroVideo }
+export function getHeroVideo(): HeroVideo            { return heroVideo }
 export function fetchHeroVideo(): Promise<HeroVideo> { return Promise.resolve(heroVideo) }
 
 // ─── Preload hints ────────────────────────────────────────────────────────────
@@ -113,7 +144,7 @@ export function injectPreloadHints(publicId = heroVideo.public_id): void {
   const frag = document.createDocumentFragment()
 
   // HLS manifest — crossOrigin property (not setAttribute) ensures CORS mode
-  // matches hls.js fetch() call → guaranteed cache hit, not a miss
+  // matches hls.js fetch() call → guaranteed cache hit, not a miss.
   const hlsLink = document.createElement('link')
   hlsLink.rel = 'preload'; hlsLink.as = 'fetch'
   hlsLink.href = cloudinaryHlsUrl(publicId)
@@ -122,7 +153,10 @@ export function injectPreloadHints(publicId = heroVideo.public_id): void {
   hlsLink.dataset.heroSlot = 'hls'
   frag.appendChild(hlsLink)
 
-  // Poster — responsive srcset, q_auto:eco for small breakpoints
+  // Poster — responsive srcset using .jpg (always available, no 404 risk).
+  // href matches the 1920w srcset entry — the largest — so on full-width
+  // viewports (sizes="100vw") the browser picks this entry and the preload
+  // is guaranteed to be used, eliminating the "preloaded but not used" warning.
   const posterLink = document.createElement('link')
   posterLink.rel = 'preload'; posterLink.as = 'image'
   posterLink.href = cloudinaryPosterUrl(publicId, 1920, 'good')
