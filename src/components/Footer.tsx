@@ -86,7 +86,7 @@ const Footer: React.FC = () => {
               contentKey="footer-description"
               as="p"
               className="text-white/90 mb-4"
-              fallback="Luftoptagelser og dronefotografering. En ny verden."
+              fallback="Dronefotografering og -optagelser i Syddanmark. 100% tilfredshedsgaranti."
             />
             <div className="flex space-x-4">
               <a href="https://www.linkedin.com/in/flai-dk/" target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition-colors"><Linkedin size={20} /></a>

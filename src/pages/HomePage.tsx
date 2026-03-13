@@ -15,7 +15,7 @@ const HomePage: React.FC = () => {
   const { getContent, homeSections, isSiteContentLoaded } = useData();
 
   const heroLogo = getContent('site-logo', "https://pbqeljimuerxatrtmgsn.supabase.co/storage/v1/object/public/site-content/1773294006709-bc63a5b4.webp");
-  const heroSubtitle = getContent('hero-subtitle', "Drone service i Syddanmark. 100% garanti.");
+  const heroSubtitle = getContent('hero-subtitle', "Dronefotografering og -optagelser i Syddanmark. 100% tilfredshedsgaranti.");
   const contactEmail = getContent('contact-email', "fb@flai.dk");
   const contactPhone = getContent('contact-phone', "+45 27 29 21 99");
 
@@ -61,7 +61,7 @@ const HomePage: React.FC = () => {
         <div className="text-xl mb-8 text-neutral-100 drop-shadow-lg">
           <EditableContent
             contentKey="hero-subtitle"
-            fallback="Drone service i Syddanmark. 100% garanti."
+            fallback="Dronefotografering og -optagelser i Syddanmark. 100% tilfredshedsgaranti."
           />
         </div>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
