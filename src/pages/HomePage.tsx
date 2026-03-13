@@ -123,7 +123,7 @@ const HomePage: React.FC = () => {
 
       <section className="py-20 bg-neutral-800">
         <div className="container text-center">
-          <EditableContent contentKey="cta-title" as="h2" className="text-3xl md:text-4xl font-bold mb-6 text-white" fallback="Klar til at se verden fra oven med vores droneservice?" />
+          <EditableContent contentKey="cta-title" as="h2" className="text-3xl md:text-4xl font-bold mb-6 text-white" fallback="Klar til en ny verden fra oven?" />
           <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
             <button onClick={() => navigate('/products')} className="btn-primary text-lg px-8 py-4">
               <EditableContent contentKey="cta-button-primary" fallback="Se Priser og Book" />
