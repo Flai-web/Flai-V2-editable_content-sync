@@ -6,9 +6,9 @@
  *  1. UPLOAD PRESET (Cloudinary Dashboard → Settings → Upload → Herovideo):
  *       `eager`, `eager_async` and `overwrite` are NOT allowed in unsigned
  *       upload requests — configure them once in the preset's Transform tab:
- *         Eager: sp_hd/f_m3u8
- *         Eager: f_mp4,q_auto,vc_h264,w_1920,h_1080,c_limit
- *         Eager: f_webm,q_auto,vc_vp9,w_1920,h_1080,c_limit
+ *         Eager: sp_hd
+ *         Eager: f_mp4,q_auto:good,vc_h264
+ *         Eager: f_webm,q_auto:good,vc_vp9
  *         Eager: f_jpg,q_auto,so_0,w_1280
  *         eager_async: true   ← prevents timeouts on large videos
  *         overwrite:   true   ← required for the replace flow
@@ -61,9 +61,9 @@ const CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
 //  A) UPLOAD PRESET (Cloudinary Dashboard → Settings → Upload → Herovideo):
 //     Configure these in the preset's Transform tab so they run automatically
 //     on every upload:
-//       • Eager: sp_hd/f_m3u8
-//       • Eager: f_mp4,q_auto,vc_h264,w_1920,h_1080,c_limit
-//       • Eager: f_webm,q_auto,vc_vp9,w_1920,h_1080,c_limit
+//       • Eager: sp_hd
+//       • Eager: f_mp4,q_auto:good,vc_h264
+//       • Eager: f_webm,q_auto:good,vc_vp9
 //       • Eager: f_jpg,q_auto,so_0,w_1280
 //       • eager_async: true  (set in preset so large videos don't time out)
 //       • overwrite: true    (needed for replace flow)
@@ -77,12 +77,13 @@ const CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
 // The EAGER_ALL string below is used by the edge function's explicit call.
 
 const EAGER_ALL = [
-  // HLS adaptive stream — sp_hd profile handles codec/bitrate rungs automatically
-  'sp_hd/f_m3u8',
+  // HLS adaptive stream — sp_hd generates multiple bitrate rungs automatically
+  // Note: sp_hd handles format internally; no need to chain f_m3u8 separately
+  'sp_hd',
   // MP4 H.264 — params alphabetized within component per Cloudinary requirement
-  'f_mp4,q_auto,vc_h264,w_1920,h_1080,c_limit',
+  'f_mp4,q_auto:good,vc_h264',
   // WebM VP9 — best compression for Chrome/Firefox
-  'f_webm,q_auto,vc_vp9,w_1920,h_1080,c_limit',
+  'f_webm,q_auto:good,vc_vp9',
   // Poster frame — first frame, 1280 px wide JPEG
   'f_jpg,q_auto,so_0,w_1280',
 ].join('|');
