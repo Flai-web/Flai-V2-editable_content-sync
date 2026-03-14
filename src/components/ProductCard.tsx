@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../types';
-import { SkeletonLoader, SkeletonImage, SkeletonText, SkeletonButton } from './SkeletonLoader';
+import { SkeletonLoader, SkeletonText, SkeletonButton } from './SkeletonLoader';
+import EditableContent from './EditableContent';
 
 interface ProductCardSkeletonProps {
   className?: string;
@@ -26,10 +29,6 @@ export const ProductCardSkeleton: React.FC<ProductCardSkeletonProps> = ({ classN
     </div>
   </div>
 );
-
-import { Link } from 'lucide-react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import EditableContent from './EditableContent';
 
 interface ProductCardProps {
   product: Product;
