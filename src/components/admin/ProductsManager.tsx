@@ -7,62 +7,102 @@ import EditableContent from '../EditableContent';
 import toast from 'react-hot-toast';
 
 // ─── Normalise whatever Supabase returns for a text[] column ──────────────────
-// Handles: real JS string[], Postgres literal '{url1,url2}', single string, null
 function toStringArray(val: unknown): string[] {
   if (!val) return [];
-
-  // Already a proper JS array (most common case from Supabase JS client)
   if (Array.isArray(val)) {
-    return val.flatMap(v => {
-      if (typeof v !== 'string' || !v.trim()) return [];
-      return [v.trim()];
-    });
+    return val.flatMap(v => (typeof v === 'string' && v.trim() ? [v.trim()] : []));
   }
-
   if (typeof val === 'string') {
     const trimmed = val.trim();
     if (!trimmed) return [];
-
-    // Postgres array literal: {item1,item2,...}
-    // URLs never start with '{' so this is safe
     if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
       const inner = trimmed.slice(1, -1).trim();
       if (!inner) return [];
-
-      // Split carefully: items may be quoted strings containing commas
       const results: string[] = [];
       let current = '';
       let inQuote = false;
-
       for (let i = 0; i < inner.length; i++) {
         const ch = inner[i];
-        if (ch === '"' && inner[i - 1] !== '\\') {
-          inQuote = !inQuote;
-        } else if (ch === ',' && !inQuote) {
+        if (ch === '"' && inner[i - 1] !== '\\') { inQuote = !inQuote; }
+        else if (ch === ',' && !inQuote) {
           const item = current.replace(/^"|"$/g, '').replace(/\\"/g, '"').trim();
           if (item) results.push(item);
           current = '';
-        } else {
-          current += ch;
-        }
+        } else { current += ch; }
       }
-      // Last item
       const last = current.replace(/^"|"$/g, '').replace(/\\"/g, '"').trim();
       if (last) results.push(last);
-
       return results.filter(s => s.length > 0);
     }
-
-    // Single URL string
     return [trimmed];
   }
-
   return [];
 }
 
+// ─── YouTube helpers ──────────────────────────────────────────────────────────
+function isYoutube(url: string): boolean {
+  return url.startsWith('youtube:');
+}
+
+function youtubeId(url: string): string {
+  return url.replace('youtube:', '');
+}
+
+// ─── Media tile — image or YouTube embed ─────────────────────────────────────
+interface MediaTileProps {
+  url:     string;
+  label?:  string;
+  index:   number;
+  name:    string;
+}
+
+const MediaTile: React.FC<MediaTileProps> = ({ url, label, index, name }) => {
+  if (isYoutube(url)) {
+    const id = youtubeId(url);
+    return (
+      <div className="relative aspect-video bg-neutral-800 rounded overflow-hidden">
+        {label && (
+          <span className="absolute top-1 left-1 z-10 bg-primary text-white text-[10px] font-bold px-1 py-0.5 rounded pointer-events-none">
+            {label}
+          </span>
+        )}
+        <iframe
+          src={`https://www.youtube.com/embed/${id}`}
+          title={`${name} video ${index + 1}`}
+          className="w-full h-full"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-video bg-neutral-800 rounded overflow-hidden">
+      {label && (
+        <span className="absolute top-1 left-1 z-10 bg-primary text-white text-[10px] font-bold px-1 py-0.5 rounded pointer-events-none">
+          {label}
+        </span>
+      )}
+      <img
+        src={url}
+        alt={`${name} ${index + 1}`}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = 'none';
+          console.warn('[ProductsManager] broken image src:', url);
+        }}
+      />
+    </div>
+  );
+};
+
 // ─── Reorderable image grid ───────────────────────────────────────────────────
 interface ReorderableImagesProps {
-  images: unknown;
+  images:   unknown;
   onChange: (images: string[]) => void;
   onRemove: (index: number) => void;
 }
@@ -71,7 +111,7 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
   const safe = toStringArray(images);
   const dragIndex = useRef<number | null>(null);
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
-  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [overIdx,     setOverIdx]     = useState<number | null>(null);
 
   const handleDragStart = (idx: number) => { dragIndex.current = idx; setDraggingIdx(idx); };
   const handleDragEnter = (idx: number) => {
@@ -92,9 +132,9 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-      {safe.map((image, index) => (
+      {safe.map((url, index) => (
         <div
-          key={`${index}-${image.slice(-20)}`}
+          key={`${index}-${url.slice(-20)}`}
           draggable
           onDragStart={() => handleDragStart(index)}
           onDragEnter={() => handleDragEnter(index)}
@@ -102,10 +142,10 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
           onDragEnd={handleDragEnd}
           className="relative group cursor-grab active:cursor-grabbing select-none"
           style={{
-            opacity: draggingIdx === index ? 0.4 : 1,
+            opacity:   draggingIdx === index ? 0.4 : 1,
             transform: overIdx === index && draggingIdx !== index ? 'scale(1.03)' : 'scale(1)',
             transition: 'transform 0.15s ease, opacity 0.15s ease',
-            outline: overIdx === index && draggingIdx !== index ? '2px solid #f97316' : 'none',
+            outline:    overIdx === index && draggingIdx !== index ? '2px solid #f97316' : 'none',
             borderRadius: '0.5rem',
           }}
         >
@@ -117,17 +157,27 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
           <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             <div className="bg-black/50 rounded-full p-1"><GripVertical size={16} className="text-white" /></div>
           </div>
-          <img
-            src={image}
-            alt={`Billede ${index + 1}`}
-            className="w-full h-24 object-cover rounded-lg pointer-events-none bg-neutral-700"
-            draggable={false}
-            onError={(e) => {
-              const el = e.target as HTMLImageElement;
-              el.style.opacity = '0.2';
-              console.warn('Image failed to load:', image);
-            }}
-          />
+
+          {isYoutube(url) ? (
+            <div className="w-full h-24 rounded-lg overflow-hidden bg-neutral-800 pointer-events-none">
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeId(url)}`}
+                title={`YouTube ${index + 1}`}
+                className="w-full h-full"
+                frameBorder="0"
+                tabIndex={-1}
+              />
+            </div>
+          ) : (
+            <img
+              src={url}
+              alt={`Billede ${index + 1}`}
+              className="w-full h-24 object-cover rounded-lg pointer-events-none bg-neutral-700"
+              draggable={false}
+              onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.2'; }}
+            />
+          )}
+
           <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1 rounded pointer-events-none">
             {index + 1}
           </span>
@@ -147,8 +197,8 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
 const ProductsManager: React.FC = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [sliderValues, setSliderValues] = useState<Record<number, number>>({});
+  const [showAddForm,    setShowAddForm]    = useState(false);
+  const [sliderValues,   setSliderValues]   = useState<Record<number, number>>({});
 
   const arrayBounds = useMemo(() => {
     if (products.length === 0) return { min: 0, max: 100 };
@@ -192,12 +242,12 @@ const ProductsManager: React.FC = () => {
     }
     try {
       await updateProduct(editingProduct.id, {
-        name: editingProduct.name,
-        description: editingProduct.description,
-        price: editingProduct.price,
-        category: editingProduct.category,
-        images: toStringArray(editingProduct.images),
-        links: editingProduct.links,
+        name:                editingProduct.name,
+        description:         editingProduct.description,
+        price:               editingProduct.price,
+        category:            editingProduct.category,
+        images:              toStringArray(editingProduct.images),
+        links:               editingProduct.links,
         is_editing_included: editingProduct.is_editing_included,
       });
       setEditingProduct(null);
@@ -216,7 +266,7 @@ const ProductsManager: React.FC = () => {
     catch { toast.error('Kunne ikke opdatere rækkefølge'); }
   };
 
-  const handleSliderChange = (productId: number, value: number) =>
+  const handleSliderChange  = (productId: number, value: number) =>
     setSliderValues(prev => ({ ...prev, [productId]: value }));
 
   const handleSliderRelease = async (productId: number, value: number) => {
@@ -294,7 +344,7 @@ const ProductsManager: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Add Form ─────────────────────────────────────────────────────────── */}
+      {/* ── Add Form ──────────────────────────────────────────────────────────── */}
       {showAddForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6">
           <EditableContent contentKey="admin-products-add-form-title" as="h3" className="text-xl font-semibold mb-4" fallback="Tilføj Nyt Produkt" />
@@ -402,7 +452,6 @@ const ProductsManager: React.FC = () => {
       {/* ── Products List ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {products.map((product) => {
-          // Normalise here once — used in both display and edit guard
           const productImages = toStringArray(product.images);
           const productLinks  = Array.isArray(product.links) ? product.links : [];
 
@@ -410,7 +459,7 @@ const ProductsManager: React.FC = () => {
             <div key={product.id} className="bg-neutral-700/20 rounded-lg p-6">
               {editingProduct?.id === product.id ? (
 
-                // ── Edit Form ────────────────────────────────────────────────
+                // ── Edit Form ──────────────────────────────────────────────────
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -444,7 +493,6 @@ const ProductsManager: React.FC = () => {
                     <textarea value={editingProduct.description} onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })} className="form-input resize-none" rows={4} />
                   </div>
 
-                  {/* Images with reorder */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <EditableContent contentKey="admin-products-edit-images-label" as="label" className="form-label" fallback="Billeder" />
@@ -455,14 +503,9 @@ const ProductsManager: React.FC = () => {
                       )}
                     </div>
                     <ImageUpload onImageUploaded={(url) => handleImageUpload(url, true)} bucket="product-images" />
-                    <ReorderableImages
-                      images={editingProduct.images}
-                      onChange={reorderEditImages}
-                      onRemove={(i) => removeImage(i, true)}
-                    />
+                    <ReorderableImages images={editingProduct.images} onChange={reorderEditImages} onRemove={(i) => removeImage(i, true)} />
                   </div>
 
-                  {/* Links */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <EditableContent contentKey="admin-products-edit-links-label" as="label" className="form-label" fallback="Links" />
@@ -491,7 +534,7 @@ const ProductsManager: React.FC = () => {
 
               ) : (
 
-                // ── Display Mode ──────────────────────────────────────────────
+                // ── Display Mode ───────────────────────────────────────────────
                 <div>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -553,30 +596,20 @@ const ProductsManager: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Image previews — uses pre-normalised productImages */}
-                  {productImages.length > 0 ? (
+                  {/* Media previews — images AND YouTube embeds */}
+                  {productImages.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 mb-4">
-                      {productImages.slice(0, 3).map((image, index) => (
-                        <div key={index} className="relative aspect-video bg-neutral-800 rounded overflow-hidden">
-                          {index === 0 && (
-                            <span className="absolute top-1 left-1 z-10 bg-primary text-white text-[10px] font-bold px-1 py-0.5 rounded">
-                              Cover
-                            </span>
-                          )}
-                          <img
-                            src={image}
-                            alt={`${product.name} ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                              console.warn(`[ProductsManager] broken image src:`, image);
-                            }}
-                          />
-                        </div>
+                      {productImages.slice(0, 3).map((url, index) => (
+                        <MediaTile
+                          key={index}
+                          url={url}
+                          index={index}
+                          name={product.name}
+                          label={index === 0 ? 'Cover' : undefined}
+                        />
                       ))}
                     </div>
-                  ) : null}
+                  )}
 
                   {productLinks.length > 0 && (
                     <div className="space-y-1">
