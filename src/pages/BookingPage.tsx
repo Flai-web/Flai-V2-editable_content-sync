@@ -69,7 +69,6 @@ const BookingPage: React.FC = () => {
       if (user) {
         const { data: { user: authUser } } = await supabase.auth.getUser();
         
-        // Check for name in user_metadata (from Google OAuth or manual entry)
         const fullName = authUser?.user_metadata?.full_name || 
                         authUser?.user_metadata?.name || 
                         '';
@@ -111,13 +110,17 @@ const BookingPage: React.FC = () => {
     fetchProduct();
   }, [productId]);
 
+  // Recalculate total price:
+  // - If editing is included in the product, no extra charge ever
+  // - If editing is NOT included but user opts in, add 100 kr
   useEffect(() => {
     if (product) {
-      const editingCost = (product.is_editing_included || includeEditing) ? 100 : 0;
+      const editingCost = (!product.is_editing_included && includeEditing) ? 100 : 0;
       setTotalPrice(product.price + editingCost);
     }
   }, [product, includeEditing]);
 
+  // Auto-enable editing toggle if product includes it (for UI clarity), but no charge added
   useEffect(() => {
     if (product?.is_editing_included) {
       setIncludeEditing(true);
@@ -218,7 +221,6 @@ const BookingPage: React.FC = () => {
   const handleContinue = async () => {
     if (isProcessing) return;
 
-    // Validate required fields
     if (!selectedTimeSlot) {
       toast.error('Vælg venligst dato og tidspunkt');
       return;
@@ -229,7 +231,6 @@ const BookingPage: React.FC = () => {
       return;
     }
 
-    // Validate guest information if not logged in
     if (!user) {
       if (!guestEmail) {
         toast.error('Indtast venligst din email');
@@ -247,7 +248,6 @@ const BookingPage: React.FC = () => {
       }
     }
 
-    // Validate user name if logged in and needs name
     if (user && needsUserName && !userName.trim()) {
       toast.error('Indtast venligst dit navn');
       return;
@@ -261,7 +261,6 @@ const BookingPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // Update user name in auth if needed
       if (user && needsUserName && userName.trim()) {
         const updated = await updateUserNameInAuth(userName);
         if (!updated) {
@@ -271,7 +270,6 @@ const BookingPage: React.FC = () => {
         }
       }
 
-      // Validate address
       const isValid = await validateAddress(address);
       if (!isValid) {
         toast.error('Adressen er uden for vores dækningsområde');
@@ -279,7 +277,10 @@ const BookingPage: React.FC = () => {
         return;
       }
 
-      // Navigate to payment page with booking details
+      // Only charge for editing if NOT included in product AND user opted in
+      const editingCost = (!product.is_editing_included && includeEditing) ? 100 : 0;
+      const calculatedTotalPrice = product.price + editingCost;
+
       navigate('/payment', {
         state: {
           productId: product.id,
@@ -289,7 +290,8 @@ const BookingPage: React.FC = () => {
           bookingTime: selectedTimeSlot.time,
           address,
           includeEditing,
-          totalPrice,
+          isEditingIncluded: product.is_editing_included ?? false,
+          totalPrice: calculatedTotalPrice,
           guestEmail: !user ? guestEmail : undefined,
           guestName: !user ? guestName : userName
         }
@@ -392,7 +394,6 @@ const BookingPage: React.FC = () => {
                   fallback="Udfyld dine oplysninger for at fortsætte, eller log ind med Google for at udfylde automatisk."
                 />
                 
-                {/* Google Sign-In Button */}
                 <div className="mb-6">
                   <GoogleLoginButton
                     buttonText="Udfyld med Google"
@@ -416,7 +417,6 @@ const BookingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Guest Name Input */}
                 <div className="mb-4">
                   <label htmlFor="guestName" className="block text-sm font-medium text-neutral-300 mb-2">
                     <EditableContent
@@ -444,7 +444,6 @@ const BookingPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Guest Email Input */}
                 <div className="mb-4">
                   <label htmlFor="guestEmail" className="block text-sm font-medium text-neutral-300 mb-2">
                     <EditableContent
@@ -688,33 +687,47 @@ const BookingPage: React.FC = () => {
                   </div>
                 </>
               )}
-              
+
               <div className="flex justify-between">
                 <EditableContent
-                  contentKey="booking-summary-editing-label"
+                  contentKey="booking-summary-base-price-label"
                   as="span"
                   className="text-neutral-300"
-                  fallback="Redigering"
+                  fallback="Basis pris"
                 />
-                <span className="text-white">
-                  {product.is_editing_included ? (
+                <span className="text-white">{product.price} kr</span>
+              </div>
+
+              {/* Only show editing line item if NOT included in product AND user opted in */}
+              {!product.is_editing_included && includeEditing && (
+                <div className="flex justify-between">
+                  <EditableContent
+                    contentKey="booking-summary-editing-label"
+                    as="span"
+                    className="text-neutral-300"
+                    fallback="Redigering"
+                  />
+                  <span className="text-white">+100 kr</span>
+                </div>
+              )}
+
+              {/* Show editing included badge if product includes it */}
+              {product.is_editing_included && (
+                <div className="flex justify-between">
+                  <EditableContent
+                    contentKey="booking-summary-editing-label"
+                    as="span"
+                    className="text-neutral-300"
+                    fallback="Redigering"
+                  />
+                  <span className="text-green-400">
                     <EditableContent
                       contentKey="booking-summary-editing-included"
                       fallback="Inkluderet"
                     />
-                  ) : includeEditing ? (
-                    <EditableContent
-                      contentKey="booking-summary-editing-yes"
-                      fallback="Ja (+100 kr)"
-                    />
-                  ) : (
-                    <EditableContent
-                      contentKey="booking-summary-editing-no"
-                      fallback="Nej"
-                    />
-                  )}
-                </span>
-              </div>
+                  </span>
+                </div>
+              )}
             </div>
             
             <div className="border-t border-neutral-700 pt-4">
