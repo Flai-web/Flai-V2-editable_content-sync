@@ -10,6 +10,27 @@ import GoogleLoginButton from '../components/GoogleLoginButton';
 import { isAddressWithinRange, getFormattedDistance } from '../utils/location';
 import toast from 'react-hot-toast';
 
+// Extract a YouTube video ID from any common YouTube URL format, or return null
+const getYouTubeId = (url: string): string | null => {
+  try {
+    const u = new URL(url);
+    // youtu.be/<id>
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0];
+    // youtube.com/watch?v=<id>  or  youtube.com/embed/<id>  or  youtube.com/shorts/<id>
+    if (u.hostname.includes('youtube.com')) {
+      const v = u.searchParams.get('v');
+      if (v) return v;
+      const parts = u.pathname.split('/').filter(Boolean);
+      if (['embed', 'shorts', 'v'].includes(parts[0])) return parts[1];
+    }
+  } catch {
+    // not a valid URL – fall through
+  }
+  return null;
+};
+
+const isYouTubeUrl = (url: string) => getYouTubeId(url) !== null;
+
 const BookingPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
@@ -362,11 +383,23 @@ const BookingPage: React.FC = () => {
             />
             <div className="flex flex-col md:flex-row">
               <div className="md:w-1/3 mb-4 md:mb-0">
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="w-full h-32 object-cover rounded-lg"
-                />
+                {product.images[0] && isYouTubeUrl(product.images[0]) ? (
+                  <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYouTubeId(product.images[0])}?rel=0&modestbranding=1`}
+                      title={product.name}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full rounded-lg"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={product.images[0]}
+                    alt={product.name}
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                )}
               </div>
               <div className="md:w-2/3 md:pl-6">
                 <h3 className="text-lg font-medium">{product.name}</h3>
