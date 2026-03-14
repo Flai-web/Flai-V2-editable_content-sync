@@ -7,22 +7,56 @@ import EditableContent from '../EditableContent';
 import toast from 'react-hot-toast';
 
 // ─── Normalise whatever Supabase returns for a text[] column ──────────────────
-// Supabase JS may return a real JS string[], a Postgres literal '{a,b}', or null.
+// Handles: real JS string[], Postgres literal '{url1,url2}', single string, null
 function toStringArray(val: unknown): string[] {
   if (!val) return [];
-  if (Array.isArray(val)) return val.filter((v): v is string => typeof v === 'string' && v.length > 0);
+
+  // Already a proper JS array (most common case from Supabase JS client)
+  if (Array.isArray(val)) {
+    return val.flatMap(v => {
+      if (typeof v !== 'string' || !v.trim()) return [];
+      return [v.trim()];
+    });
+  }
+
   if (typeof val === 'string') {
     const trimmed = val.trim();
+    if (!trimmed) return [];
+
+    // Postgres array literal: {item1,item2,...}
+    // URLs never start with '{' so this is safe
     if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-      const inner = trimmed.slice(1, -1);
+      const inner = trimmed.slice(1, -1).trim();
       if (!inner) return [];
-      return inner
-        .match(/("(?:[^"\\]|\\.)*"|[^,]+)/g)
-        ?.map(s => s.replace(/^"|"$/g, '').replace(/\\"/g, '"').trim())
-        .filter(s => s.length > 0) ?? [];
+
+      // Split carefully: items may be quoted strings containing commas
+      const results: string[] = [];
+      let current = '';
+      let inQuote = false;
+
+      for (let i = 0; i < inner.length; i++) {
+        const ch = inner[i];
+        if (ch === '"' && inner[i - 1] !== '\\') {
+          inQuote = !inQuote;
+        } else if (ch === ',' && !inQuote) {
+          const item = current.replace(/^"|"$/g, '').replace(/\\"/g, '"').trim();
+          if (item) results.push(item);
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      // Last item
+      const last = current.replace(/^"|"$/g, '').replace(/\\"/g, '"').trim();
+      if (last) results.push(last);
+
+      return results.filter(s => s.length > 0);
     }
-    if (trimmed.length > 0) return [trimmed];
+
+    // Single URL string
+    return [trimmed];
   }
+
   return [];
 }
 
@@ -40,7 +74,10 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
   const [overIdx, setOverIdx] = useState<number | null>(null);
 
   const handleDragStart = (idx: number) => { dragIndex.current = idx; setDraggingIdx(idx); };
-  const handleDragEnter = (idx: number) => { if (dragIndex.current === null || dragIndex.current === idx) return; setOverIdx(idx); };
+  const handleDragEnter = (idx: number) => {
+    if (dragIndex.current === null || dragIndex.current === idx) return;
+    setOverIdx(idx);
+  };
   const handleDragEnd = () => {
     if (dragIndex.current !== null && overIdx !== null && dragIndex.current !== overIdx) {
       const next = [...safe];
@@ -57,7 +94,7 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
       {safe.map((image, index) => (
         <div
-          key={`${image}-${index}`}
+          key={`${index}-${image.slice(-20)}`}
           draggable
           onDragStart={() => handleDragStart(index)}
           onDragEnter={() => handleDragEnter(index)}
@@ -82,10 +119,14 @@ const ReorderableImages: React.FC<ReorderableImagesProps> = ({ images, onChange,
           </div>
           <img
             src={image}
-            alt={`Product ${index + 1}`}
-            className="w-full h-24 object-cover rounded-lg pointer-events-none"
+            alt={`Billede ${index + 1}`}
+            className="w-full h-24 object-cover rounded-lg pointer-events-none bg-neutral-700"
             draggable={false}
-            onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }}
+            onError={(e) => {
+              const el = e.target as HTMLImageElement;
+              el.style.opacity = '0.2';
+              console.warn('Image failed to load:', image);
+            }}
           />
           <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1 rounded pointer-events-none">
             {index + 1}
@@ -172,7 +213,7 @@ const ProductsManager: React.FC = () => {
 
   const handleArrayChange = async (productId: number, newArray: number) => {
     try { await updateProduct(productId, { array: newArray }); toast.success('Rækkefølge opdateret'); }
-    catch (error) { console.error('Error updating array:', error); toast.error('Kunne ikke opdatere rækkefølge'); }
+    catch { toast.error('Kunne ikke opdatere rækkefølge'); }
   };
 
   const handleSliderChange = (productId: number, value: number) =>
@@ -219,7 +260,11 @@ const ProductsManager: React.FC = () => {
       updated[index] = { ...updated[index], [field]: value };
       setEditingProduct({ ...editingProduct, links: updated });
     } else {
-      setNewProduct(p => { const updated = [...p.links]; updated[index] = { ...updated[index], [field]: value }; return { ...p, links: updated }; });
+      setNewProduct(p => {
+        const updated = [...p.links];
+        updated[index] = { ...updated[index], [field]: value };
+        return { ...p, links: updated };
+      });
     }
   };
 
@@ -239,6 +284,7 @@ const ProductsManager: React.FC = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <EditableContent contentKey="admin-products-title" as="h2" className="text-2xl font-bold" fallback="Produkt Administration" />
@@ -248,12 +294,11 @@ const ProductsManager: React.FC = () => {
         </button>
       </div>
 
-      {/* ── Add Product Form ─────────────────────────────────────────────────── */}
+      {/* ── Add Form ─────────────────────────────────────────────────────────── */}
       {showAddForm && (
         <div className="bg-neutral-700/20 rounded-lg p-6">
           <EditableContent contentKey="admin-products-add-form-title" as="h3" className="text-xl font-semibold mb-4" fallback="Tilføj Nyt Produkt" />
           <div className="space-y-4">
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <EditableContent contentKey="admin-products-name-label" as="label" className="form-label" fallback="Produktnavn" />
@@ -292,7 +337,7 @@ const ProductsManager: React.FC = () => {
                 <ArrowUpDown size={16} className="text-neutral-400 mr-2" />
                 <EditableContent contentKey="admin-products-order-label" as="span" className="text-sm font-medium text-neutral-400" fallback="Rækkefølge" />
               </div>
-              <input type="number" value={newProduct.array} onChange={(e) => setNewProduct(p => ({ ...p, array: parseInt(e.target.value) || 0 }))} className="form-input text-sm mb-3" placeholder="Rækkefølge værdi" />
+              <input type="number" value={newProduct.array} onChange={(e) => setNewProduct(p => ({ ...p, array: parseInt(e.target.value) || 0 }))} className="form-input text-sm mb-3" />
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-neutral-400">
                   <span>0</span>
@@ -300,7 +345,7 @@ const ProductsManager: React.FC = () => {
                   <span>Højest ({arrayBounds.max})</span>
                 </div>
                 <div className="relative">
-                  <input type="range" min={0} max={arrayBounds.max} value={newProduct.array} onChange={(e) => setNewProduct(p => ({ ...p, array: parseInt(e.target.value) }))} className="w-full h-2 rounded-lg appearance-none cursor-pointer slider-thumb" style={{ background: sliderBg(newProduct.array), transition: 'background 0.1s ease' }} />
+                  <input type="range" min={0} max={arrayBounds.max} value={newProduct.array} onChange={(e) => setNewProduct(p => ({ ...p, array: parseInt(e.target.value) }))} className="w-full h-2 rounded-lg appearance-none cursor-pointer slider-thumb" style={{ background: sliderBg(newProduct.array) }} />
                   {arrayBounds.min > 0 && arrayBounds.max > 0 && (
                     <div className="absolute top-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `calc(${(arrayBounds.min / arrayBounds.max) * 100}% - 4px)` }}>
                       <div className="w-2 h-2 bg-yellow-400 rounded-full border border-neutral-800" />
@@ -354,16 +399,18 @@ const ProductsManager: React.FC = () => {
         </div>
       )}
 
-      {/* ── Products List ──────────────────────────────────────────────────────── */}
+      {/* ── Products List ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {products.map((product) => {
+          // Normalise here once — used in both display and edit guard
           const productImages = toStringArray(product.images);
           const productLinks  = Array.isArray(product.links) ? product.links : [];
 
           return (
             <div key={product.id} className="bg-neutral-700/20 rounded-lg p-6">
               {editingProduct?.id === product.id ? (
-                // ── Edit Form ──────────────────────────────────────────────────
+
+                // ── Edit Form ────────────────────────────────────────────────
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -441,8 +488,10 @@ const ProductsManager: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
               ) : (
-                // ── Display Mode ───────────────────────────────────────────────
+
+                // ── Display Mode ──────────────────────────────────────────────
                 <div>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -477,7 +526,7 @@ const ProductsManager: React.FC = () => {
                       <ArrowUpDown size={16} className="text-neutral-400 mr-2" />
                       <EditableContent contentKey="admin-products-order-label" as="span" className="text-sm font-medium text-neutral-400" fallback="Rækkefølge" />
                     </div>
-                    <input type="number" value={product.array || 0} onChange={(e) => handleArrayChange(product.id, parseInt(e.target.value) || 0)} className="form-input text-sm mb-3" placeholder="Rækkefølge værdi" />
+                    <input type="number" value={product.array || 0} onChange={(e) => handleArrayChange(product.id, parseInt(e.target.value) || 0)} className="form-input text-sm mb-3" />
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-neutral-400">
                         <span>0</span>
@@ -492,11 +541,11 @@ const ProductsManager: React.FC = () => {
                           onMouseUp={(e) => handleSliderRelease(product.id, parseInt((e.target as HTMLInputElement).value))}
                           onTouchEnd={(e) => handleSliderRelease(product.id, parseInt((e.target as HTMLInputElement).value))}
                           className="w-full h-2 rounded-lg appearance-none cursor-pointer slider-thumb"
-                          style={{ background: sliderBg(sliderValues[product.id] ?? product.array ?? 0), transition: 'background 0.1s ease' }}
+                          style={{ background: sliderBg(sliderValues[product.id] ?? product.array ?? 0) }}
                         />
                         {arrayBounds.min > 0 && arrayBounds.max > 0 && (
                           <div className="absolute top-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `calc(${(arrayBounds.min / arrayBounds.max) * 100}% - 4px)` }}>
-                            <div className="w-2 h-2 bg-yellow-400 rounded-full border border-neutral-800" title={`Laveste: ${arrayBounds.min}`} />
+                            <div className="w-2 h-2 bg-yellow-400 rounded-full border border-neutral-800" />
                           </div>
                         )}
                       </div>
@@ -504,24 +553,30 @@ const ProductsManager: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Image previews — normalised, first = cover */}
-                  {productImages.length > 0 && (
+                  {/* Image previews — uses pre-normalised productImages */}
+                  {productImages.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       {productImages.slice(0, 3).map((image, index) => (
-                        <div key={index} className="relative">
+                        <div key={index} className="relative aspect-video bg-neutral-800 rounded overflow-hidden">
                           {index === 0 && (
-                            <span className="absolute top-1 left-1 z-10 bg-primary text-white text-[10px] font-bold px-1 py-0.5 rounded">Cover</span>
+                            <span className="absolute top-1 left-1 z-10 bg-primary text-white text-[10px] font-bold px-1 py-0.5 rounded">
+                              Cover
+                            </span>
                           )}
                           <img
                             src={image}
                             alt={`${product.name} ${index + 1}`}
-                            className="w-full h-16 object-cover rounded"
-                            onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              console.warn(`[ProductsManager] broken image src:`, image);
+                            }}
                           />
                         </div>
                       ))}
                     </div>
-                  )}
+                  ) : null}
 
                   {productLinks.length > 0 && (
                     <div className="space-y-1">
