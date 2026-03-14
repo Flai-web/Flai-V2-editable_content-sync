@@ -10,18 +10,23 @@ import GoogleLoginButton from '../components/GoogleLoginButton';
 import { isAddressWithinRange, getFormattedDistance } from '../utils/location';
 import toast from 'react-hot-toast';
 
-// Extract a YouTube video ID from any common YouTube URL format, or return null
+// Resolve a YouTube video ID from either:
+//   - the "youtube:<videoId>" prefix format used by the portfolio, OR
+//   - any common full YouTube URL (youtu.be/…, youtube.com/watch?v=…, /embed/…, /shorts/…)
+// Returns null if the string is not a YouTube reference.
 const getYouTubeId = (url: string): string | null => {
+  // Portfolio-style prefix: "youtube:<videoId>"
+  if (url.startsWith('youtube:')) return url.split(':')[1] || null;
+
+  // Full URL formats
   try {
     const u = new URL(url);
-    // youtu.be/<id>
-    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0];
-    // youtube.com/watch?v=<id>  or  youtube.com/embed/<id>  or  youtube.com/shorts/<id>
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0] || null;
     if (u.hostname.includes('youtube.com')) {
       const v = u.searchParams.get('v');
       if (v) return v;
       const parts = u.pathname.split('/').filter(Boolean);
-      if (['embed', 'shorts', 'v'].includes(parts[0])) return parts[1];
+      if (['embed', 'shorts', 'v'].includes(parts[0])) return parts[1] || null;
     }
   } catch {
     // not a valid URL – fall through
@@ -384,13 +389,15 @@ const BookingPage: React.FC = () => {
             <div className="flex flex-col md:flex-row">
               <div className="md:w-1/3 mb-4 md:mb-0">
                 {product.images[0] && isYouTubeUrl(product.images[0]) ? (
-                  <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+                  <div className="relative w-full pt-[56.25%]">
                     <iframe
-                      src={`https://www.youtube.com/embed/${getYouTubeId(product.images[0])}?rel=0&modestbranding=1`}
-                      title={product.name}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
                       className="absolute inset-0 w-full h-full rounded-lg"
+                      src={`https://www.youtube.com/embed/${getYouTubeId(product.images[0])}`}
+                      title={product.name}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
                     />
                   </div>
                 ) : (
