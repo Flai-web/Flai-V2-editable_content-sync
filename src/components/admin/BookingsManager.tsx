@@ -1104,7 +1104,7 @@ const BookingsManager: React.FC = () => {
                     }}
                     className="mr-2"
                   />
-                  <span className="text-sm text-neutral-300"><EditableContent contentKey="bookings-manager-inkluder-redigering-100-kr-hvis" fallback="Inkluder Redigering (+100 kr hvis ikke inkluderet)" /></span>
+                  <span className="text-sm text-neutral-300"><EditableContent contentKey="bookings-manager-inkluder-redigering-100-kr-hvis" fallback="Inkluder Redigering (+100 kr hvis inkluderet)" /></span>
                 </label>
 
                 <label className="flex items-center cursor-pointer">

@@ -502,7 +502,7 @@ const PaymentPage: React.FC = () => {
                           <EditableContent contentKey="payment-card-option-description" as="p" className="text-neutral-300 mt-1" fallback="Sikker betaling via Stripe." />
                           <div className="flex space-x-2 mt-2">
                             <CreditCard size={20} className="text-neutral-400" />
-                            <EditableContent contentKey="payment-card-types" as="span" className="text-sm text-neutral-400" fallback="Mobilepay, Visa, Mastercard o.a." />
+                            <EditableContent contentKey="payment-card-types" as="span" className="text-sm text-neutral-400" fallback="Visa, Mastercard, Klarna o.a." />
                           </div>
                         </div>
                       </div>
@@ -522,7 +522,7 @@ const PaymentPage: React.FC = () => {
                           <EditableContent contentKey="payment-cash-option-description" as="p" className="text-neutral-300 mt-1" fallback="Du betaler med kort eller kontant ved optagelsen." />
                           <div className="flex space-x-2 mt-2">
                             <Banknote size={20} className="text-neutral-400" />
-                            <EditableContent contentKey="payment-cash-types" as="span" className="text-sm text-neutral-400" fallback="Kontanter eller kort" />
+                            <EditableContent contentKey="payment-cash-types" as="span" className="text-sm text-neutral-400" fallback="Kontant eller kort" />
                           </div>
                         </div>
                       </div>
