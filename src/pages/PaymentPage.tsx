@@ -21,6 +21,8 @@ interface PaymentPageState {
   bookingTime: string;
   address: string;
   includeEditing: boolean;
+  /** True when editing was already included in the product at no extra cost */
+  isEditingIncluded: boolean;
   totalPrice: number;
   guestEmail?: string;
   guestName?: string;
@@ -81,6 +83,12 @@ const PaymentPage: React.FC = () => {
   } | null>(null);
 
   const bookingDetails = location.state as PaymentPageState;
+
+  // Derive whether the editing add-on was a paid choice:
+  // - includeEditing true + isEditingIncluded false → user paid +100 kr
+  // - includeEditing true + isEditingIncluded true  → free, already in product price
+  const editingIsPaidAddon =
+    bookingDetails?.includeEditing && !bookingDetails?.isEditingIncluded;
 
   // Get customer name from booking details or auth
   useEffect(() => {
@@ -260,7 +268,7 @@ const PaymentPage: React.FC = () => {
       price: finalPrice,
       credits_used: creditsToUse,
       customer_name: customerName,
-      mode: 'normal', // Normal booking mode
+      mode: 'normal',
     };
 
     if (user) bookingData.user_id = user.id;
@@ -422,13 +430,13 @@ const PaymentPage: React.FC = () => {
                 <div className="bg-neutral-800 rounded-xl shadow-md p-6 mb-6 border border-neutral-700">
                   <EditableContent contentKey="credits_payment_section_title" as="h2" className="text-xl font-semibold mb-4 flex items-center" fallback="Brug Credits" />
                   <div className="flex items-center justify-between mb-4">
-                   <div className="flex items-center">
-  <Coins size={20} className="text-primary mr-2" />
-  <span className="text-neutral-300 flex items-center gap-1">
-    <EditableContent contentKey="credits_payment_available_text" fallback="Tilgængelige credits:" />
-    <span className="font-semibold text-white">{credits}</span>
-  </span>
-</div>
+                    <div className="flex items-center">
+                      <Coins size={20} className="text-primary mr-2" />
+                      <span className="text-neutral-300 flex items-center gap-1">
+                        <EditableContent contentKey="credits_payment_available_text" fallback="Tilgængelige credits:" />
+                        <span className="font-semibold text-white">{credits}</span>
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-3 mb-4">
                     <label className="flex items-center">
@@ -437,10 +445,10 @@ const PaymentPage: React.FC = () => {
                     </label>
                     <label className="flex items-center">
                       <input type="radio" name="creditUsage" value="all" checked={creditUsageOption === 'all'} onChange={(e) => setCreditUsageOption(e.target.value as any)} className="mr-2" />
-                 <span className="flex items-center gap-1">
-  <EditableContent contentKey="credits_payment_option_all" fallback="Brug alle tilgængelige credits" />
-  <span>({Math.min(credits, priceAfterDiscount)} credits)</span>
-</span>
+                      <span className="flex items-center gap-1">
+                        <EditableContent contentKey="credits_payment_option_all" fallback="Brug alle tilgængelige credits" />
+                        <span>({Math.min(credits, priceAfterDiscount)} credits)</span>
+                      </span>
                     </label>
                     <label className="flex items-center">
                       <input type="radio" name="creditUsage" value="custom" checked={creditUsageOption === 'custom'} onChange={(e) => setCreditUsageOption(e.target.value as any)} className="mr-2" />
@@ -616,6 +624,7 @@ const PaymentPage: React.FC = () => {
               )}
             </div>
 
+            {/* Order summary sidebar */}
             <div className="lg:col-span-2">
               <div className="bg-neutral-800 rounded-xl shadow-md p-6 sticky top-24 border border-neutral-700">
                 <EditableContent contentKey="payment-order-summary-title" as="h2" className="text-xl font-semibold mb-4" fallback="Din booking" />
@@ -640,12 +649,25 @@ const PaymentPage: React.FC = () => {
                     <EditableContent contentKey="payment-summary-base-price-label" as="span" className="text-neutral-300" fallback="Basis pris" />
                     <span className="text-white">{bookingDetails.productPrice} kr</span>
                   </div>
-                  {bookingDetails.includeEditing && (
+
+                  {/* Editing line: only show +100 kr if user paid for it (not if it was included in the product) */}
+                  {editingIsPaidAddon && (
                     <div className="flex justify-between">
                       <EditableContent contentKey="payment-summary-editing-label" as="span" className="text-neutral-300" fallback="Redigering" />
                       <span className="text-white">100 kr</span>
                     </div>
                   )}
+
+                  {/* Show "Included" badge if editing came free with the product */}
+                  {bookingDetails.isEditingIncluded && (
+                    <div className="flex justify-between">
+                      <EditableContent contentKey="payment-summary-editing-label" as="span" className="text-neutral-300" fallback="Redigering" />
+                      <span className="text-green-400">
+                        <EditableContent contentKey="payment-summary-editing-included" fallback="Inkluderet" />
+                      </span>
+                    </div>
+                  )}
+
                   {appliedDiscount && (
                     <div className="flex justify-between">
                       <EditableContent contentKey="payment-summary-discount-label" as="span" className="text-success" fallback="Rabat" />
