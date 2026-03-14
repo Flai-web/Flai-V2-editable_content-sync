@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link } from 'lucide-react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../types';
 import { SkeletonLoader, SkeletonText, SkeletonButton } from './SkeletonLoader';
 import EditableContent from './EditableContent';
@@ -87,7 +86,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     );
   };
 
-  const showArrows = isHovering && product.images.length > 1 && !product.images[currentImageIndex]?.startsWith('youtube:');
+  const showArrows =
+    isHovering &&
+    product.images.length > 1 &&
+    !product.images[currentImageIndex]?.startsWith('youtube:');
 
   return (
     <div className="card hover:shadow-lg group">
@@ -118,37 +120,44 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         {product.images.length > 1 && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {product.images.map((_, i) => (
-              <div
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                  i === currentImageIndex ? 'bg-white' : 'bg-white/40'
-                }`}
-              />
-            ))}
+            {product.images.map((_, i) => {
+              return (
+                <div
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    i === currentImageIndex ? 'bg-white' : 'bg-white/40'
+                  }`}
+                />
+              );
+            })}
           </div>
         )}
       </div>
 
-      <h3 className="text-xl font-semibold cursor-pointer hover:text-primary transition-colors" onClick={handleViewProduct}>
+      <h3
+        className="text-xl font-semibold cursor-pointer hover:text-primary transition-colors"
+        onClick={handleViewProduct}
+      >
         {product.name}
       </h3>
       <p className="text-neutral-300 my-3 line-clamp-3">{product.description}</p>
 
       {product.links && product.links.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {product.links.map((link, index) => (
-            
-              key={index}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center text-sm text-primary hover:text-primary-dark transition-colors"
-            >
-              <Link size={14} className="mr-1" />
-              {link.title}
-            </a>
-          ))}
+          {product.links.map((link, index) => {
+            return (
+              <a
+                key={index}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center text-sm text-primary hover:text-primary-dark transition-colors"
+              >
+                <Link size={14} className="mr-1" />
+                {link.title}
+              </a>
+            );
+          })}
         </div>
       )}
 
@@ -163,12 +172,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
 
         <div className="flex flex-col space-y-2">
-          <button onClick={handleOrderClick} className="w-full btn-primary text-sm px-4 py-3 flex flex-col items-center">
+          <button
+            onClick={handleOrderClick}
+            className="w-full btn-primary text-sm px-4 py-3 flex flex-col items-center"
+          >
             <span className="font-bold text-base block">
               <EditableContent contentKey="product-card-book-nu" fallback="Book Nu" />
             </span>
             <span className="text-xs opacity-80 font-normal">
-              <EditableContent contentKey="product-card-du-vaelger-selv-tid-og" fallback="Du vælger selv tid og dato efter dine behov" />
+              <EditableContent
+                contentKey="product-card-du-vaelger-selv-tid-og"
+                fallback="Du vælger selv tid og dato efter dine behov"
+              />
             </span>
           </button>
 
@@ -180,7 +195,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <EditableContent contentKey="product-card-smart-booking" fallback="Smart Booking" />
             </span>
             <span className="text-xs opacity-80 font-normal text-neutral-400">
-              <EditableContent contentKey="product-card-vi-vaelger-dato-og-tid" fallback="Vi vælger dato og tid efter lysforholdende" />
+              <EditableContent
+                contentKey="product-card-vi-vaelger-dato-og-tid"
+                fallback="Vi vælger dato og tid efter lysforholdende"
+              />
             </span>
           </button>
         </div>
