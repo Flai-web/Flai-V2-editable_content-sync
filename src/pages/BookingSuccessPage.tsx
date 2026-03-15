@@ -54,14 +54,6 @@ const BookingSuccessPage: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Additional Help Text */}
-        <p className="text-center text-neutral-400 mt-4 md:mt-6 text-sm">
-          Har du spørgsmål? Kontakt os på{' '}
-          <a href="/contact" className="text-blue-400 hover:text-blue-300 underline">
-            kontaktsiden
-          </a>
-        </p>
       </div>
     </div>
   );
